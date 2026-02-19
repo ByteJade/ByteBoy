@@ -4,10 +4,7 @@ static const uint16_t frequency[4] = {1024, 16, 64, 256};
 
 void Timer::step(int time){
     self.internalDIV += time;
-    if (self.internalDIV >= 256){
-        self.internalDIV -= 256;
-        self.DIV = self.internalDIV >> 8;
-    }
+    self.DIV = self.internalDIV >> 8;
 
     if(self.TAC & 4){
         self.internalTIMA += time;

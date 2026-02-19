@@ -168,9 +168,9 @@ void PPU::renderSprites() {
         }
         
         uint8_t lpalette = 0;
-        uint8_t spritePalette = (flags&0x10) ? self.OBP0 : self.OBP1;
+        uint8_t spritePalette = (flags&0x10) ? self.OBP1 : self.OBP0;
         if (MEM.isCGB){
-            lpalette = (flags & 0x07) << 2;
+            lpalette = (flags & 0x7) << 2;
         }
         
         uint16_t tile_line_offset = tile_addr + tile_line*2;
@@ -194,11 +194,17 @@ void PPU::renderSprites() {
             if (pos >= 160) break;
             
             int bit = start_bit + (xFlip ? x : -x);
-            uint8_t color = ((high_byte >> bit) & 1) << 1 | ((low_byte >> bit) & 1);
+            uint8_t color = ((high_byte >> bit) & 1) << 1 |
+                            ((low_byte >> bit) & 1);
             
             if (color == 0) continue;
             
-            uint8_t final_color = MEM.isCGB ? color : (spritePalette >> (color * 2)) & 0x03;
+            uint8_t final_color;
+            if (MEM.isCGB){
+                final_color = color;
+            } else{
+                final_color = (spritePalette >> (color * 2)) & 3;
+            }
             OBlines[pos] = final_color | meta;
         }
     }
@@ -288,7 +294,9 @@ void PPU::drawline(int& x, int dx, int dy, uint16_t tilemap){
         uint8_t final_color;
         if (MEM.isCGB){
             final_color = color;
-        }else final_color = (palette >> (color * 2)) & 0x03;
+        }else {
+            final_color = (palette >> (color * 2)) & 3;
+        }
         BGlines[x++] = final_color | meta;
     }
 }
