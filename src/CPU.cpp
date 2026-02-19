@@ -1,15 +1,16 @@
 #include "../include/CPU.hpp"
 #include "../include/MEM.hpp"
 
-struct code{
-    char data[12];
-    int args;
-};
-
 uint16_t CPU::AF(){ return uint16_t(A)<<8|F; }
 uint16_t CPU::BC(){ return uint16_t(B)<<8|C; }
 uint16_t CPU::DE(){ return uint16_t(D)<<8|E; }
 uint16_t CPU::HL(){ return uint16_t(H)<<8|L; }
+
+void CPU::SETAF(uint16_t nn){ A = (nn>>8); F = nn; }
+void CPU::SETBC(uint16_t nn){ B = (nn>>8); C = nn; }
+void CPU::SETDE(uint16_t nn){ D = (nn>>8); E = nn; }
+void CPU::SETHL(uint16_t nn){ H = (nn>>8); L = nn; }
+
 uint16_t CPU::nn() {
     uint8_t low = MEM.read(PC++);
     uint16_t high = MEM.read(PC++);
@@ -18,48 +19,8 @@ uint16_t CPU::nn() {
 uint8_t CPU::n(){ return MEM.read(PC++); }
 void CPU::SAVESP() {
     uint16_t adr = nn();
-    MEM.write(adr, SP & 0xFF);
+    MEM.write(adr, SP);
     MEM.write(adr + 1, SP >> 8);
-}
-void CPU::DECBC() {
-    uint16_t nn = BC();
-    nn --;
-    B = (nn >> 8) & 0xFF;
-    C = nn & 0xFF;
-}
-void CPU::DECDE() {
-    uint16_t nn = DE();
-    nn --;
-    D = (nn >> 8) & 0xFF;
-    E = nn & 0xFF;
-}
-void CPU::DECHL() {
-    uint16_t nn = HL();
-    nn --;
-    H = (nn >> 8) & 0xFF;
-    L = nn & 0xFF;
-}
-void CPU::INCBC() {
-    uint16_t nn = BC();
-    nn ++;
-    B = (nn >> 8) & 0xFF;
-    C = nn & 0xFF;
-}
-void CPU::INCDE() {
-    uint16_t nn = DE();
-    nn ++;
-    D = (nn >> 8) & 0xFF;
-    E = nn & 0xFF;
-}
-void CPU::INCHL() {
-    uint16_t nn = HL();
-    nn ++;
-    H = (nn >> 8) & 0xFF;
-    L = nn & 0xFF;
-}
-void CPU::SETHL(uint16_t n) {
-    H = (n >> 8) & 0xFF;
-    L = n & 0xFF;
 }
 void CPU::PUSH(uint16_t n) {
     MEM.write(--SP, n>>8);
@@ -77,98 +38,98 @@ void CPU::ADD8(uint8_t b) {
     uint16_t result = A + b;
     F = 0;
     
-    if ((result & 0xFF) == 0) F |= 0x80;
-    if (result > 0xFF) F |= 0x10;
-    if ((A & 0x0F) + (b & 0x0F) > 0x0F) F |= 0x20;
+    if ((result & 0xFF) == 0) F |= zero;
+    if (result > 0xFF) F |= car;
+    if ((A & 0xF) + (b & 0xF) > 0xF) F |= hcar;
     A = result;
 }
 void CPU::ADC8(uint8_t b) {
-    uint8_t carry = (F & 0x10) ? 1 : 0;
+    uint8_t carry = (F & car) ? 1 : 0;
     uint16_t result = A + b + carry;
     F = 0;
-    if ((result & 0xFF) == 0) F |= 0x80;
-    if (result > 0xFF) F |= 0x10;
-    if ((A & 0x0F) + (b & 0x0F) + carry > 0x0F) F |= 0x20;
+    if ((result & 0xFF) == 0) F |= zero;
+    if (result > 0xFF) F |= car;
+    if ((A & 0xF) + (b & 0xF) + carry > 0xF) F |= hcar;
     
     A = result;
 }
 void CPU::SUB8(uint8_t b) {
     int result = A - b;
-    F = 0x40;
+    F = sub;
     
-    if ((result & 0xFF) == 0) F |= 0x80;
-    if (A < b) F |= 0x10;
-    if ((A & 0x0F) < (b & 0x0F)) F |= 0x20;
+    if ((result & 0xFF) == 0) F |= zero;
+    if (A < b) F |= car;
+    if ((A & 0xF) < (b & 0xF)) F |= hcar;
     
     A = result;
 }
 void CPU::SBC8(uint8_t b) {
-    uint8_t carry = (F & 0x10) ? 1 : 0;
+    uint8_t carry = (F & car) ? 1 : 0;
     int result = A - b - carry;
-    F = 0x40;
-    if ((result & 0xFF) == 0) F |= 0x80;
-    if (A < b + carry) F |= 0x10;
-    if ((A & 0x0F) < (b & 0x0F) + carry) F |= 0x20;
+    F = sub;
+    if ((result & 0xFF) == 0) F |= zero;
+    if (A < b + carry) F |= car;
+    if ((A & 0xF) < (b & 0xF) + carry) F |= hcar;
     
     A = result;
 }
 void CPU::AND8(uint8_t b) {
     A &= b;
-    F = 0x20;
-    if (A == 0) F |= 0x80;
+    F = hcar;
+    if (A == 0) F |= zero;
 }
 void CPU::OR8(uint8_t b) {
     A |= b;
-    F = 0x00;
-    if (A == 0) F |= 0x80;
+    F = 0;
+    if (A == 0) F |= zero;
 }
 void CPU::XOR8(uint8_t b) {
     A ^= b;
-    F = 0x00;
-    if (A == 0) F |= 0x80;
+    F = 0;
+    if (A == 0) F |= zero;
 }
 void CPU::CP8(uint8_t b) {
     uint8_t result = A - b;
-    F = 0x40;
+    F = sub;
     
-    if (result == 0) F |= 0x80;
-    if (A < b) F |= 0x10;
-    if ((A & 0x0F) < (b & 0x0F)) F |= 0x20;
+    if (result == 0) F |= zero;
+    if (A < b) F |= car;
+    if ((A & 0xF) < (b & 0xF)) F |= hcar;
 }
 uint8_t CPU::INC8(uint8_t b) {
     uint8_t result = b + 1;
-    F &= 0x10;
-    if (result == 0) F |= 0x80;
-    if ((b & 0x0F) == 0x0F) F |= 0x20;
+    F &= car;
+    if (result == 0) F |= zero;
+    if ((b & 0xF) == 0xF) F |= hcar;
     return result;
 }
 uint8_t CPU::DEC8(uint8_t b) {
     uint8_t result = b - 1;
-    F &= 0x10;
-    F |= 0x40;
-    if (result == 0) F |= 0x80;
-    if ((b & 0x0F) == 0x00) F |= 0x20;
+    F &= car;
+    F |= sub;
+    if (result == 0) F |= zero;
+    if ((b & 0xF) == 0) F |= hcar;
     return result;
 }
 uint16_t CPU::ADD16(uint16_t a, uint16_t b) {
     uint32_t result = a + b;
-    F &= 0x80;
-    if ((a & 0x0FFF) + (b & 0x0FFF) > 0x0FFF) F |= 0x20;
-    if (result > 0xFFFF) F |= 0x10;
+    F &= zero;
+    if ((a & 0x0FFF) + (b & 0x0FFF) > 0x0FFF) F |= hcar;
+    if (result > 0xFFFF) F |= car;
 
     return result;
 }
 uint16_t CPU::ADD16S(uint16_t nn, int8_t e) {
     uint16_t result = nn + e;
-    F = 0x00;
-    if (((nn ^ e ^ result) & 0x10) != 0) F |= 0x20;
-    if (((nn ^ e ^ result) & 0x100) != 0) F |= 0x10;
+    F = 0;
+    if (((nn ^ e ^ result) & car) != 0) F |= hcar;
+    if (((nn ^ e ^ result) & 0x100) != 0) F |= car;
     
     return result;
 }
 
 uint8_t CPU::JNZ() {
-    if (!(F & 0x80)){
+    if (!(F & zero)){
         PC = nn();
         return 16;
     }
@@ -176,7 +137,7 @@ uint8_t CPU::JNZ() {
     return 12;
 }
 uint8_t CPU::JZ() {
-    if ((F & 0x80)){
+    if ((F & zero)){
         PC = nn();
         return 16;
     }
@@ -184,7 +145,7 @@ uint8_t CPU::JZ() {
     return 12;
 }
 uint8_t CPU::JNC() {
-    if (!(F & 0x10)){
+    if (!(F & car)){
         PC = nn();
         return 16;
     }
@@ -192,7 +153,7 @@ uint8_t CPU::JNC() {
     return 12;
 }
 uint8_t CPU::JC() {
-    if ((F & 0x10)){
+    if ((F & car)){
         PC = nn();
         return 16;
     }
@@ -200,7 +161,7 @@ uint8_t CPU::JC() {
     return 12;
 }
 uint8_t CPU::JRNZ() {
-    if (!(F & 0x80)){
+    if (!(F & zero)){
         JR();
         return 12;
     }
@@ -208,7 +169,7 @@ uint8_t CPU::JRNZ() {
     return 8;
 }
 uint8_t CPU::JRZ() {
-    if ((F & 0x80)){
+    if ((F & zero)){
         JR();
         return 12;
     }
@@ -216,7 +177,7 @@ uint8_t CPU::JRZ() {
     return 8;
 }
 uint8_t CPU::JRNC() {
-    if (!(F & 0x10)){
+    if (!(F & car)){
         JR();
         return 12;
     }
@@ -224,7 +185,7 @@ uint8_t CPU::JRNC() {
     return 8;
 }
 uint8_t CPU::JRC() {
-    if ((F & 0x10)){
+    if ((F & car)){
         JR();
         return 12;
     }
@@ -235,7 +196,7 @@ void CPU::JR() {
     PC += int8_t(n());
 }
 uint8_t CPU::CALLNZ() {
-    if (!(F & 0x80)){
+    if (!(F & zero)){
         CALL();
         return 24;
     }
@@ -243,7 +204,7 @@ uint8_t CPU::CALLNZ() {
     return 12;
 }
 uint8_t CPU::CALLZ() {
-    if ((F & 0x80)){
+    if ((F & zero)){
         CALL();
         return 24;
     }
@@ -251,7 +212,7 @@ uint8_t CPU::CALLZ() {
     return 12;
 }
 uint8_t CPU::CALLNC() {
-    if (!(F & 0x10)){
+    if (!(F & car)){
         CALL();
         return 24;
     }
@@ -259,7 +220,7 @@ uint8_t CPU::CALLNC() {
     return 12;
 }
 uint8_t CPU::CALLC() {
-    if ((F & 0x10)){
+    if ((F & car)){
         CALL();
         return 24;
     }
@@ -272,28 +233,28 @@ void CPU::CALL() {
     PC = adr;
 }
 uint8_t CPU::RETNZ() {
-    if (!(F & 0x80)){
+    if (!(F & zero)){
         PC = POP16();
         return 20;
     }
     return 8;
 }
 uint8_t CPU::RETZ() {
-    if ((F & 0x80)){
+    if ((F & zero)){
         PC = POP16();
         return 20;
     }
     return 8;
 }
 uint8_t CPU::RETNC() {
-    if (!(F & 0x10)){
+    if (!(F & car)){
         PC = POP16();
         return 20;
     }
     return 8;
 }
 uint8_t CPU::RETC() {
-    if ((F & 0x10)){
+    if ((F & car)){
         PC = POP16();
         return 20;
     }
@@ -306,10 +267,10 @@ void CPU::RST(uint8_t n) {
 
 void CPU::BIT(uint8_t bit, uint8_t value) {
     bool bit_value = (value >> bit) & 1;
-    uint8_t old_carry = F & 0x10;
+    uint8_t old_carry = F & car;
     
-    F = (!bit_value) ? 0x80 : 0x00;
-    F |= 0x20;
+    F = (!bit_value) ? zero : 0;
+    F |= hcar;
     F |= old_carry;
 }
 void CPU::SET(uint8_t bit, uint8_t& value) {
@@ -322,44 +283,44 @@ void CPU::RES(uint8_t bit, uint8_t& value) {
 void CPU::RLCA() {
     bool old_bit7 = (A >> 7) & 1;
     A = (A << 1) | old_bit7;
-    F = 0x00;
-    if (old_bit7) F |= 0x10;
+    F = 0;
+    if (old_bit7) F |= car;
 }
 void CPU::RRCA() {
     bool old_bit0 = A & 1;
     A = (A >> 1) | (old_bit0 << 7);
-    F = 0x00;
-    if (old_bit0) F |= 0x10;
+    F = 0;
+    if (old_bit0) F |= car;
 }
 void CPU::RRA() {
-    bool bit0 = A & 0x01;
-    A = (A >> 1) | ((F & 0x10) ? 0x80 : 0x00);
-    F = (bit0 ? 0x10 : 0x00);
+    bool bit0 = A & 1;
+    A = (A >> 1) | ((F & car) ? zero : 0);
+    F = (bit0 ? car : 0);
 }
 void CPU::RLA() {
-    bool old_bit7 = (A >> 7) & 0x01;
-    A = (A << 1) | ((F & 0x10) ? 0x01 : 0x00);
-    F = 0x00;
-    if (old_bit7) F |= 0x10;
+    bool old_bit7 = (A >> 7) & 1;
+    A = (A << 1) | ((F & car) ? 1 : 0);
+    F = 0;
+    if (old_bit7) F |= car;
 }
 void CPU::CPL() {
     A = ~A;
-    F |= 0x60;
+    F |= sub | hcar;
 }
 void CPU::CCF() {
-    bool z_flag = (F & 0x80) != 0;
-    bool old_carry = (F & 0x10) != 0;
+    bool z_flag = (F & zero) != 0;
+    bool old_carry = (F & car) != 0;
     
     F = 0;
-    if (z_flag) F |= 0x80;
-    if (!old_carry) F |= 0x10;
+    if (z_flag) F |= zero;
+    if (!old_carry) F |= car;
 }
 void CPU::DAA() {
     uint8_t a = A;
     uint8_t adjust = 0;
-    uint8_t fc = (F & 0x10);
-    uint8_t fh = (F & 0x20);
-    uint8_t fn = (F & 0x40);
+    uint8_t fc = (F & car);
+    uint8_t fh = (F & hcar);
+    uint8_t fn = (F & sub);
     
     if (!fn) {
         if (fh || (a & 0x0F) > 0x09) {
@@ -367,7 +328,7 @@ void CPU::DAA() {
         }
         if (fc || a > 0x99) {
             adjust += 0x60;
-            fc = 0x10;
+            fc = car;
         }
     } 
     else {
@@ -376,73 +337,73 @@ void CPU::DAA() {
         }
         if (fc) {
             adjust -= 0x60;
-            fc = 0x10;
+            fc = car;
         }
     }
     A = a + adjust;
     F = fc;
-    if (A == 0) F |= 0x80;
-    if (fn) F |= 0x40;
+    if (A == 0) F |= zero;
+    if (fn) F |= sub;
 }
 void CPU::SRL(uint8_t &reg) {
-    bool bit0 = reg & 0x01;
+    bool bit0 = reg & 1;
     reg = reg >> 1;
-    F = 0x00;
-    if (reg == 0) F |= 0x80;
-    if (bit0) F |= 0x10;
+    F = 0;
+    if (reg == 0) F |= zero;
+    if (bit0) F |= car;
 }
 void CPU::SLA(uint8_t &reg) {
     uint8_t bit7 = (reg >> 7) & 1;
     reg = reg << 1;
     
-    F = 0x00;
-    if (reg == 0) F |= 0x80;
-    if (bit7) F |= 0x10;
+    F = 0;
+    if (reg == 0) F |= zero;
+    if (bit7) F |= car;
 }
 void CPU::SRA(uint8_t &reg) {
-    uint8_t bit0 = reg & 0x01;
-    uint8_t bit7 = reg & 0x80;
+    uint8_t bit0 = reg & 1;
+    uint8_t bit7 = reg & zero;
     
     reg = (reg >> 1) | bit7;
-    F = 0x00;
-    if (reg == 0) F |= 0x80;
-    if (bit0) F |= 0x10;
+    F = 0;
+    if (reg == 0) F |= zero;
+    if (bit0) F |= car;
 }
 void CPU::RR(uint8_t &reg) {
     uint8_t old_carry = (F >> 4) & 1;
-    uint8_t bit0 = reg & 0x01;
+    uint8_t bit0 = reg & 1;
     reg = (reg >> 1) | (old_carry << 7);
-    F = 0x00;
+    F = 0;
     
-    if (reg == 0) F |= 0x80;
-    if (bit0) F |= 0x10;
+    if (reg == 0) F |= zero;
+    if (bit0) F |= car;
 }
 void CPU::RL(uint8_t &reg) {
     uint8_t old_carry = (F >> 4) & 1;
     uint8_t bit7 = (reg >> 7) & 1;
     reg = (reg << 1) | old_carry;
-    F = 0x00;
-    if (reg == 0) F |= 0x80;
-    if (bit7) F |= 0x10;
+    F = 0;
+    if (reg == 0) F |= zero;
+    if (bit7) F |= car;
 }
 void CPU::RLC(uint8_t &reg) {
     uint8_t bit7 = (reg >> 7) & 1;
     reg = (reg << 1) | bit7;
-    F = 0x00;
-    if (reg == 0) F |= 0x80;
-    if (bit7) F |= 0x10;
+    F = 0;
+    if (reg == 0) F |= zero;
+    if (bit7) F |= car;
 }
 void CPU::RRC(uint8_t &reg) {
-    uint8_t bit0 = reg & 0x01;
+    uint8_t bit0 = reg & 1;
     reg = (reg >> 1) | (bit0 << 7);
-    F = 0x00;
-    if (reg == 0) F |= 0x80;
-    if (bit0) F |= 0x10;
+    F = 0;
+    if (reg == 0) F |= zero;
+    if (bit0) F |= car;
 }
 void CPU::SWAP(uint8_t& n) {
-    n = ((n & 0x0F) << 4) | ((n & 0xF0) >> 4);
-    F = 0x00;
-    if (n == 0) F |= 0x80;
+    n = (n << 4) | (n >> 4);
+    F = 0;
+    if (n == 0) F |= zero;
 }
 #include <iostream>
 void CPU::STOP(){
@@ -510,16 +471,16 @@ uint8_t& CPU::getReg(uint8_t registr, int& time){
 }
 int CPU::execute(uint8_t opcode){
     uint8_t pcode = opcode >> 6;
-    uint8_t code = opcode >> 3 & 0x07;
-    uint8_t registr = opcode & 0x07;
+    uint8_t code = opcode >> 3 & 0x7;
+    uint8_t registr = opcode & 0x7;
     int time = 4;
     switch (pcode) {
-        case 0x00:
+        case 0:
             switch (opcode) {
                 case 0x00: return 4;
-                case 0x01: C = n(); B = n(); return 12;
+                case 0x01: SETBC(nn()); return 12;
                 case 0x02: MEM.write(BC(), A); return 8;
-                case 0x03: INCBC(); return 8;
+                case 0x03: SETBC(BC()+1); return 8;
                 case 0x04: B = INC8(B); return 4;
                 case 0x05: B = DEC8(B); return 4;
                 case 0x06: B = n(); return 8;
@@ -527,15 +488,15 @@ int CPU::execute(uint8_t opcode){
                 case 0x08: SAVESP(); return 20;
                 case 0x09: SETHL(ADD16(HL(),BC())); return 8;
                 case 0x0A: A = MEM.read(BC()); return 8;
-                case 0x0B: DECBC(); return 8;
+                case 0x0B: SETBC(BC()-1); return 8;
                 case 0x0C: C = INC8(C); return 4;
                 case 0x0D: C = DEC8(C); return 4;
                 case 0x0E: C = n(); return 8;
                 case 0x0F: RRCA(); return 4;
                 case 0x10: STOP(); return 4;
-                case 0x11: E = n(); D = n(); return 12;
+                case 0x11: SETDE(nn()); return 12;
                 case 0x12: MEM.write(DE(), A); return 8;
-                case 0x13: INCDE(); return 8;
+                case 0x13: SETDE(DE()+1);; return 8;
                 case 0x14: D = INC8(D); return 4;
                 case 0x15: D = DEC8(D); return 4;
                 case 0x16: D = n(); return 8;
@@ -543,38 +504,38 @@ int CPU::execute(uint8_t opcode){
                 case 0x18: JR(); return 12;
                 case 0x19: SETHL(ADD16(HL(),DE())); return 8;
                 case 0x1A: A = MEM.read(DE()); return 8;
-                case 0x1B: DECDE(); return 8;
+                case 0x1B: SETDE(DE()-1); return 8;
                 case 0x1C: E = INC8(E); return 4;
                 case 0x1D: E = DEC8(E); return 4;
                 case 0x1E: E = n(); return 8;
                 case 0x1F: RRA(); return 4;
                 case 0x20: return JRNZ();
-                case 0x21: L = n(); H = n(); return 12;
-                case 0x22: MEM.write(HL(), A); INCHL(); return 8;
-                case 0x23: INCHL(); return 8;
+                case 0x21: SETHL(nn()); return 12;
+                case 0x22: MEM.write(HL(), A); SETHL(HL()+1); return 8;
+                case 0x23: SETHL(HL()+1); return 8;
                 case 0x24: H = INC8(H); return 4;
                 case 0x25: H = DEC8(H); return 4;
                 case 0x26: H = n(); return 8;
                 case 0x27: DAA(); return 4;
                 case 0x28: return JRZ();
                 case 0x29: SETHL(ADD16(HL(),HL())); return 8;
-                case 0x2A: A = MEM.read(HL()); INCHL(); return 8;
-                case 0x2B: DECHL(); return 8;
+                case 0x2A: A = MEM.read(HL()); SETHL(HL()+1); return 8;
+                case 0x2B: SETHL(HL()-1); return 8;
                 case 0x2C: L = INC8(L); return 4;
                 case 0x2D: L = DEC8(L); return 4;
                 case 0x2E: L = n(); return 8;
                 case 0x2F: CPL(); return 4;
                 case 0x30: return JRNC();
                 case 0x31: SP = nn(); return 12;
-                case 0x32: MEM.write(HL(), A); DECHL(); return 8;
+                case 0x32: MEM.write(HL(), A); SETHL(HL()-1); return 8;
                 case 0x33: SP++; return 8;
                 case 0x34: MEM.write(HL(), INC8(MEM.read(HL()))); return 12;
                 case 0x35: MEM.write(HL(), DEC8(MEM.read(HL()))); return 12;
                 case 0x36: MEM.write(HL(), n()); return 12;
-                case 0x37: F &= 0x80; F |= 0x10; return 4;
+                case 0x37: F &= zero; F |= car; return 4;
                 case 0x38: return JRC();
                 case 0x39: SETHL(ADD16(HL(),SP)); return 8;
-                case 0x3A: A = MEM.read(HL()); DECHL(); return 8;
+                case 0x3A: A = MEM.read(HL()); SETHL(HL()-1); return 8;
                 case 0x3B: SP--; return 8;
                 case 0x3C: A = INC8(A); return 4;
                 case 0x3D: A = DEC8(A); return 4;
@@ -582,7 +543,7 @@ int CPU::execute(uint8_t opcode){
                 case 0x3F: CCF(); return 4;
             }
             break;
-        case 0x01:{
+        case 1:{
             if (opcode == 0x76){
                 halt = true;
                 break;
@@ -591,7 +552,7 @@ int CPU::execute(uint8_t opcode){
             uint8_t& inp = getReg(registr, time);
             out = inp;
         } break;
-        case 0x02:{
+        case 2:{
             uint8_t out = getReg(registr, time);
             switch (code) {
                 case 0x00: ADD8(out); break;
@@ -604,7 +565,7 @@ int CPU::execute(uint8_t opcode){
                 case 0x07: CP8(out); break;
             }
         }break;
-        case 0x03:{
+        case 3:{
             switch (opcode) {
                 case 0xC0: return RETNZ();
                 case 0xC1: C = POP(); B = POP(); return 12;
@@ -677,12 +638,12 @@ int CPU::execute(uint8_t opcode){
 }
 int CPU::executeCB(uint8_t opcode){
     uint8_t pcode = opcode >> 6;
-    uint8_t code = opcode >> 3 & 0x07;
-    uint8_t registr = opcode & 0x07;
+    uint8_t code = opcode >> 3 & 0x7;
+    uint8_t registr = opcode & 0x7;
     int time = 8;
     uint8_t& out = getReg(registr, time);
     switch (pcode) {
-        case 0x00:
+        case 0:
             switch (code) {
                 case 0x00: RLC(out); break;
                 case 0x01: RRC(out); break;
@@ -694,14 +655,14 @@ int CPU::executeCB(uint8_t opcode){
                 case 0x07: SRL(out); break;
             }
             break;
-        case 0x01: // BIT [HL] - 12
+        case 1: // BIT [HL] - 12
             if (time == 16) time = 12;
             BIT(code,out);
             break;
-        case 0x02:
+        case 2:
             RES(code,out);
             break;
-        case 0x03:
+        case 3:
             SET(code,out);
             break;
     }

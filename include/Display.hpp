@@ -6,23 +6,11 @@
 #include "types.hpp"
 #include "Joypad.hpp"
 
-struct mat4 {
+class mat4 {
     float m[4][4]; // m[col][row]
-    void ortho(float left, float right, float bottom, float top, float zNear, float zFar){
-        for (int i = 0; i < 4; i++)
-            for (int j = 0; j < 4; j++)
-                m[i][j] = 0.0f;
-        m[0][0] = 2.0f / (right - left);
-        m[1][1] = 2.0f / (top - bottom);
-        m[2][2] = -2.0f / (zFar - zNear);
-        m[3][0] = -(right + left) / (right - left);
-        m[3][1] = -(top + bottom) / (top - bottom);
-        m[3][2] = -(zFar + zNear) / (zFar - zNear);
-        m[3][3] = 1.0f;
-    }
-    const float* ptr(){
-        return &m[0][0];
-    }
+public:
+    void ortho(float left, float right, float bottom, float top, float zNear, float zFar);
+    const float* ptr();
 };
 
 
@@ -70,11 +58,12 @@ class Window{
     Texture* screen;
     Mesh* mesh;
     bool shouldClose;
+
+    int _width;
+    int _height;
 public:
     Joypad joypad;
     
-    int _width;
-    int _height;
     Window(unsigned int width, unsigned int height, const char* name);
     ~Window();
     void clear();

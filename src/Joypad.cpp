@@ -7,10 +7,10 @@ void Joypad::update(){
     
     uint8_t result = 0xC0 | (self.Joypad & 0xF0);
     if (!(self.Joypad & 0x20)) {
-        result |= (buttons & 0x0F);
+        result |= (buttons & 0xF);
     }
     else if (!(self.Joypad & 0x10)) {
-        result |= (directions & 0x0F);
+        result |= (directions & 0xF);
     }
     
     self.Joypad = result;

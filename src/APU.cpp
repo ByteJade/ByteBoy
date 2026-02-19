@@ -8,6 +8,7 @@ static constexpr float SAMPLE_RATE = 48000;
 static constexpr int AMPLITUDE = 28000;
 
 static const uint8_t divisor_table[8] = {8, 16, 32, 48, 64, 80, 96, 112};
+static const float duty_table[4] = {0.125f, 0.250f, 0.500f, 0.750f};
 
 static void audioCallback(void* userdata, Uint8* stream, int len) {
     APU* self = static_cast<APU*>(userdata);
@@ -19,20 +20,20 @@ static void audioCallback(void* userdata, Uint8* stream, int len) {
     Sint16* buffer = reinterpret_cast<Sint16*>(stream);
     int samples = len / sizeof(Sint16);
 
-    uint8_t clock_shift = (self->NR43 >> 4) & 0x0F;
-    uint8_t counter_step = (self->NR43 >> 3) & 0x01;
-    uint8_t dividing_ratio = self->NR43 & 0x07;
+    uint8_t clock_shift = (self->NR43 >> 4) & 0xF;
+    uint8_t counter_step = (self->NR43 >> 3) & 0x1;
+    uint8_t dividing_ratio = self->NR43 & 0x7;
 
-    float duty_cycle1 = self->getDuty(self->NR11);
-    float duty_cycle2 = self->getDuty(self->NR21);
+    float duty_cycle1 = duty_table[(self->NR11 >> 6) & 3];
+    float duty_cycle2 = duty_table[(self->NR21 >> 6) & 3];
 
-    bool dir1 = (self->NR12 >> 3) & 0x01;
-    bool dir2 = (self->NR22 >> 3) & 0x01;
-    bool dir4 = (self->NR42 >> 3) & 0x01;
+    bool dir1 = (self->NR12 >> 3) & 1;
+    bool dir2 = (self->NR22 >> 3) & 1;
+    bool dir4 = (self->NR42 >> 3) & 1;
 
 
-    float left_volume = (self->NR50 & 0x07) / 7.0f;
-    float right_volume = ((self->NR50 >> 4) & 0x07) / 7.0f;
+    float left_volume = (self->NR50 & 0x7) / 7.0f;
+    float right_volume = ((self->NR50 >> 4) & 0x7) / 7.0f;
 
     for (int i = 0; i < samples; i+=2) {
         float mixed_left = 0.f;
@@ -192,16 +193,6 @@ APU::~APU(){
         device = 0;
     }
 }
-float APU::getDuty(uint8_t duty){
-    uint8_t duty_cycle_bits1 = (duty >> 6) & 0x03;
-    switch(duty_cycle_bits1) {
-        case 0: return 0.125f;
-        case 1: return 0.250f;
-        case 2: return 0.500f;
-        case 3: return 0.750f;
-    }
-    return 0;
-}
 void APU::updateEvelope(Channel& ch, bool dir){
     ch.envelope_counter++;
     int envelope_period_samples = SAMPLE_RATE / 64;
@@ -229,7 +220,7 @@ void APU::updateLenght(Channel& ch){
     }
 }
 void APU::updateSweep(Channel& ch){
-    uint8_t sweep_time = (NR10 >> 4) & 0x07;
+    uint8_t sweep_time = (NR10 >> 4) & 0x7;
     if (sweep_time == 0) return;
 
     ch.counter++;
@@ -238,7 +229,7 @@ void APU::updateSweep(Channel& ch){
     if (ch.counter >= samples_per_sweep*sweep_time) {
         ch.counter -= samples_per_sweep*sweep_time;
         
-        uint8_t N = NR10 & 0x07;
+        uint8_t N = NR10 & 0x7;
         if (N > 0){ 
             uint16_t delta = ch.current_F >> N;
             uint8_t decreace = (NR10 >> 3) & 0x01;
@@ -270,16 +261,16 @@ void APU::step(){
     if (NR14 & 0x80) {
         SweepChannel.active = true;
 
-        SweepChannel.current_F = ((NR14 & 0x07) << 8) | NR13;
+        SweepChannel.current_F = ((NR14 & 0x7) << 8) | NR13;
         SweepChannel.phase = 0.0f;
         SweepChannel.counter = 0;
 
         SweepChannel.envelope_counter = 0;
-        SweepChannel.envelope_period = NR12 & 0x07;
+        SweepChannel.envelope_period = NR12 & 0x7;
         SweepChannel.envelope_volume = (NR12 >> 4) & 0x0F;
 
         SweepChannel.length_timer = 64 - (NR11 & 0x3F);
-        if (!( (NR14 >> 6) & 0x01)) SweepChannel.length_timer = 128;
+        if (!( (NR14 >> 6) & 1)) SweepChannel.length_timer = 128;
         SweepChannel.length_counter = 0;
         
         NR14 &= ~0x80;
@@ -287,15 +278,15 @@ void APU::step(){
     if (NR24 & 0x80) {
         BahChannel.active = true;
 
-        BahChannel.current_F = ((NR24 & 0x07) << 8) | NR23;
+        BahChannel.current_F = ((NR24 & 0x7) << 8) | NR23;
         BahChannel.phase = 0.0f;
 
         BahChannel.envelope_counter = 0;
         BahChannel.envelope_period = NR22 & 0x07;
-        BahChannel.envelope_volume = (NR22 >> 4) & 0x0F;
+        BahChannel.envelope_volume = (NR22 >> 4) & 0xF;
         
         BahChannel.length_timer = 64 - (NR21 & 0x3F);
-        if (!((NR24 >> 6) & 0x01)) BahChannel.length_timer = 128;
+        if (!((NR24 >> 6) & 1)) BahChannel.length_timer = 128;
         BahChannel.length_counter = 0;
         NR24 &= ~0x80;
     }
@@ -306,10 +297,10 @@ void APU::step(){
         WaveChannel.phase = 0.0f;
         
         
-        WaveChannel.envelope_volume = (NR32 >> 5) & 0x03;
+        WaveChannel.envelope_volume = (NR32 >> 5) & 3;
 
         WaveChannel.length_timer = 256 - NR31;
-        if (!((NR34 >> 6) & 0x01)) WaveChannel.length_timer = 256;
+        if (!((NR34 >> 6) & 1)) WaveChannel.length_timer = 256;
         WaveChannel.length_counter = 0;
         
         
@@ -318,7 +309,7 @@ void APU::step(){
     if (NR44 & 0x80) {
         NoiseChannel.active = true;
         
-        uint8_t counter_step = (NR43 >> 3) & 0x01;
+        uint8_t counter_step = (NR43 >> 3) & 1;
         if (counter_step == 0) {
             NoiseChannel.lfsr = 0x7FFF;
         } else {
@@ -328,12 +319,12 @@ void APU::step(){
         
         NoiseChannel.counter = 0.0f;
         
-        NoiseChannel.envelope_volume = (NR42 >> 4) & 0x0F;
-        NoiseChannel.envelope_period = NR42 & 0x07;
+        NoiseChannel.envelope_volume = (NR42 >> 4) & 0xF;
+        NoiseChannel.envelope_period = NR42 & 0x7;
         NoiseChannel.envelope_counter = 0;
         
         NoiseChannel.length_timer = 64 - (NR41 & 0x3F);
-        if (!((NR44 >> 6) & 0x01)) NoiseChannel.length_timer = 128;
+        if (!((NR44 >> 6) & 1)) NoiseChannel.length_timer = 128;
         NoiseChannel.length_counter = 0;
         
         NR44 &= ~0x80;

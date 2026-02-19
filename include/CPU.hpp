@@ -1,5 +1,11 @@
 #include "types.hpp"
 
+enum Flags {
+    car = 0x10,
+    hcar = 0x20,
+    sub = 0x40, 
+    zero = 0x80
+};
 class MemoryMaster;
 class CPU{
     MemoryMaster& MEM;
@@ -14,7 +20,7 @@ class CPU{
     uint8_t E{0x56};
     uint8_t H{0x00};
     uint8_t L{0x0D};
-    uint8_t F{0x80};
+    uint8_t F{zero};
     uint16_t PC{0x100};
     uint16_t SP{0xFFFE};
 
@@ -23,6 +29,12 @@ class CPU{
     uint16_t BC();
     uint16_t DE();
     uint16_t HL();
+
+    void SETAF(uint16_t n);
+    void SETBC(uint16_t n);
+    void SETDE(uint16_t n);
+    void SETHL(uint16_t n);
+
     uint16_t nn();
     uint8_t n();
     uint8_t& getReg(uint8_t registr, int& time);
@@ -31,13 +43,6 @@ class CPU{
     int executeCB(uint8_t opcode);
 // math ops
     void SAVESP();
-    void DECBC();
-    void DECDE();
-    void DECHL();
-    void INCBC();
-    void INCDE();
-    void INCHL();
-    void SETHL(uint16_t n);
     void PUSH(uint16_t n);
     uint8_t POP();
     uint16_t POP16();
