@@ -320,6 +320,7 @@ void PPU::step(int time){
         self.LY = 0;
         wline = 0;
         MODE = 0;
+        IS->STAT &= 0b11111100;
         return;
     }
     timeCounter -= time;
