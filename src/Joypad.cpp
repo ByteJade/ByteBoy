@@ -15,7 +15,7 @@ void Joypad::update(){
     
     self.Joypad = result;
     if (prevButtonState ^ currentButtonState) {
-        IS->IF |= 0x10;
+        IS->IF |= INPUT;
     }
     prevButtonState = currentButtonState;
 }

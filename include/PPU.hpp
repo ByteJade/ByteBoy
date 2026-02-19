@@ -19,10 +19,10 @@ class PPU{
     uint8_t OBlines[SCW];
 
     void update();
-    void HBLANK();
-    void VBLANK();
-    void SEARCH();
-    void DRAWING();
+    void setHBLANK();
+    void setVBLANK();
+    void setSEARCH();
+    void setDRAWING();
     
     void search();
     void drawing();

@@ -545,7 +545,7 @@ void MemoryMaster::checkLYC(){
     if (PS->LY == PS->LYC){
         IS->STAT |= 0x04;
         if (IS->STAT & 0x40)
-            IS->IF |= 0x02;
+            IS->IF |= STAT;
     }else {
         IS->STAT &= ~0x04;
     }

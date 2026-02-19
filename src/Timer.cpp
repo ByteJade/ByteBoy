@@ -17,7 +17,7 @@ void Timer::step(int time){
             self.TIMA++;
             if (self.TIMA == 0) {
                 self.TIMA = self.TMA;
-                IS->IF |= 4;
+                IS->IF |= TIMER;
             }
         }
     }

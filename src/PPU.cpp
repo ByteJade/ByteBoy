@@ -12,23 +12,23 @@ void PPU::update(){
     IS->STAT = (IS->STAT&0b11111100)|MODE;
     timeCounter = cost();
 }
-void PPU::HBLANK(){
-    if (IS->STAT & 0x08) IS->IF |= 0x02;
+void PPU::setHBLANK(){
+    if (IS->STAT & 0x08) IS->IF |= STAT;
     MODE = 0;
     update();
 }
-void PPU::VBLANK(){
-    IS->IF |= 0x01;
-    if (IS->STAT & 0x10) IS->IF |= 0x02;
+void PPU::setVBLANK(){
+    IS->IF |= VBLANK;
+    if (IS->STAT & 0x10) IS->IF |= STAT;
     MODE = 1;
     update();
 }
-void PPU::SEARCH(){
-    if (IS->STAT & 0x20) IS->IF |= 0x02;
+void PPU::setSEARCH(){
+    if (IS->STAT & 0x20) IS->IF |= STAT;
     MODE = 2;
     update();
 }
-void PPU::DRAWING(){
+void PPU::setDRAWING(){
     MODE = 3;
     update();
 }
@@ -321,8 +321,8 @@ void PPU::step(int time){
             case 0:
                 self.LY++;
                 MEM.checkLYC();
-                if (self.LY >= SCH) {VBLANK();}
-                else SEARCH();
+                if (self.LY >= SCH) { setVBLANK(); }
+                else setSEARCH();
                 MEM.HDMAstep();
                 break;
             case 1:
@@ -332,16 +332,16 @@ void PPU::step(int time){
                     self.LY = 0;
                     wline = 0;
                     screen.show();
-                    SEARCH();
+                    setSEARCH();
                 }
                 break;
             case 2:
                 search();
-                DRAWING();
+                setDRAWING();
                 break;
             case 3:
                 drawing();
-                HBLANK();
+                setHBLANK();
                 screen.poolEvents();
                 break;
         }

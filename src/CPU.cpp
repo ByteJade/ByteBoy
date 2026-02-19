@@ -405,11 +405,9 @@ void CPU::SWAP(uint8_t& n) {
     F = 0;
     if (n == 0) F |= zero;
 }
-#include <iostream>
 void CPU::STOP(){
     if (MEM.isCGB && (MEM.readIO(0xFF4D) & 1)){
         MEM.doubleCPUspeed = !MEM.doubleCPUspeed;
-        std::cout<<"speed changed\n";
     }
     else if (ime) halt = true;
 }
@@ -421,7 +419,7 @@ void CPU::init(){
     MEM.write(0xFF48, 0xFF);  // OBP0
     MEM.write(0xFF49, 0xFF);  // OBP1
     if (MEM.isCGB){
-        MEM.write(0xFF70, 0x01); // SVBK = 1
+        MEM.write(0xFF70, 1); // SVBK = 1
     }
     //
     /*MEM[0xFF05] = 0x00;  // TIMA
@@ -681,23 +679,23 @@ int CPU::checkInterrupt(){
     if (halt) halt = false;
     if (!ime) return 0;
 
-    if (pending & 0x01) { // VBLANK
+    if (pending & VBLANK) {
         interrupt(0x40, 0x01);
         return 20;
     }
-    if (pending & 0x02) { // STAT
+    if (pending & STAT) {
         interrupt(0x48, 0x02);
         return 20;
     }
-    if (pending & 0x04) { // TIMER
+    if (pending & TIMER) {
         interrupt(0x50, 0x04);
         return 20;
     }
-    /*if (pending & 0x08) { // Serial shit
+    /*if (pending & SERIAL) {
         interrupt(0x58, 0x08);
         return 20;
     }*/
-    if (pending & 0x10) { // INPUT
+    if (pending & INPUT) {
         interrupt(0x60, 0x10);
         return 20;
     }
