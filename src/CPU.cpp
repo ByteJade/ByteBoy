@@ -6,7 +6,7 @@ uint16_t CPU::BC(){ return uint16_t(B)<<8|C; }
 uint16_t CPU::DE(){ return uint16_t(D)<<8|E; }
 uint16_t CPU::HL(){ return uint16_t(H)<<8|L; }
 
-void CPU::SETAF(uint16_t nn){ A = (nn>>8); F = nn; }
+void CPU::SETAF(uint16_t nn){ A = (nn>>8); F = nn & 0xF0; }
 void CPU::SETBC(uint16_t nn){ B = (nn>>8); C = nn; }
 void CPU::SETDE(uint16_t nn){ D = (nn>>8); E = nn; }
 void CPU::SETHL(uint16_t nn){ H = (nn>>8); L = nn; }
