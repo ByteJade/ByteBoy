@@ -44,5 +44,6 @@ target_compile_options(${PROJECT_NAME} PRIVATE
     -O3
 )
 
-set(CMAKE_CXX_FLAGS_RELEASE "-O3 -DNDEBUG")
-set(CMAKE_CXX_FLAGS_DEBUG "-O0 -g")
+install(TARGETS ${PROJECT_NAME}
+            RUNTIME DESTINATION bin
+            COMPONENT runtime)
