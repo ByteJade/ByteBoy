@@ -180,9 +180,13 @@ void CPU::CPL() {
     A = ~A;
     F |= sub | hcar;
 }
+void CPU::SCF() {
+    F &= zero;
+    F |= car;
+}
 void CPU::CCF() {
-    bool z_flag = (F & zero) != 0;
-    bool old_carry = (F & car) != 0;
+    bool z_flag = (F & zero);
+    bool old_carry = (F & car);
     
     F = 0;
     if (z_flag) F |= zero;
