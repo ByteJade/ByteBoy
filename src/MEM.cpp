@@ -377,8 +377,7 @@ void MemoryMaster::writeIO(uint16_t addr, uint8_t data){
                     hdma.hdma5 = 0xFF;
                 }else{
                     hdma.work = true;
-                    // idk why, but -2 fix some bugs
-                    hdma.hdma5 = blocks - 2;
+                    hdma.hdma5 = blocks - 1;
                     if ((IS->STAT & 3) == 0) // H-Blank
                         HDMAstep();
                 }
@@ -426,7 +425,7 @@ void MemoryMaster::readSaveFromFile(){
     std::ifstream file(readedFilename+".sv", std::ios::binary);
 
     if (!file.is_open()) {
-        std::cerr << "error opening file\n";
+        std::cerr << "Error opening save\n";
         return;
     }
     file.read(reinterpret_cast<char*>(CRAM), CRAMsize);
@@ -435,7 +434,7 @@ void MemoryMaster::readSaveFromFile(){
 void MemoryMaster::writeSaveToFile(){
     std::ofstream file(readedFilename+".sv", std::ios::binary);
     if (!file) {
-        std::cerr << "save error\n";
+        std::cerr << "Save error\n";
         return;
     }
     file.write(reinterpret_cast<char*>(CRAM), sizeof(char) * CRAMsize);
@@ -447,7 +446,7 @@ bool MemoryMaster::readFromFile(const char* filename){
     extractFilename(readedFilename);
     std::cout<<"read: "<<filename<<"\n";
     if (!file.is_open()) {
-        std::cerr << "failet to open file\n";
+        std::cerr << "Error opening file\n";
         return false;
     }
     char byte;
