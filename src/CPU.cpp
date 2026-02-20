@@ -295,6 +295,7 @@ uint8_t CPU::SWAP(uint8_t reg) {
 void CPU::STOP(){
     if (MEM.isCGB && (MEM.readIO(0xFF4D) & 1)){
         MEM.doubleCPUspeed = !MEM.doubleCPUspeed;
+        MEM.writeIO(0xFF4D, 0x80 | MEM.doubleCPUspeed);
     }
     else if (ime) halt = true;
 }
