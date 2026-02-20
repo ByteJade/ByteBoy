@@ -128,137 +128,10 @@ uint16_t CPU::ADD16S(uint16_t nn, int8_t e) {
     return result;
 }
 
-uint8_t CPU::JNZ() {
-    if (!(F & zero)){
-        PC = nn();
-        return 16;
-    }
-    PC += 2;
-    return 12;
-}
-uint8_t CPU::JZ() {
-    if ((F & zero)){
-        PC = nn();
-        return 16;
-    }
-    PC += 2;
-    return 12;
-}
-uint8_t CPU::JNC() {
-    if (!(F & car)){
-        PC = nn();
-        return 16;
-    }
-    PC += 2;
-    return 12;
-}
-uint8_t CPU::JC() {
-    if ((F & car)){
-        PC = nn();
-        return 16;
-    }
-    PC += 2;
-    return 12;
-}
-uint8_t CPU::JRNZ() {
-    if (!(F & zero)){
-        JR();
-        return 12;
-    }
-    PC ++;
-    return 8;
-}
-uint8_t CPU::JRZ() {
-    if ((F & zero)){
-        JR();
-        return 12;
-    }
-    PC ++;
-    return 8;
-}
-uint8_t CPU::JRNC() {
-    if (!(F & car)){
-        JR();
-        return 12;
-    }
-    PC ++;
-    return 8;
-}
-uint8_t CPU::JRC() {
-    if ((F & car)){
-        JR();
-        return 12;
-    }
-    PC ++;
-    return 8;
-}
-void CPU::JR() {
-    PC += int8_t(n());
-}
-uint8_t CPU::CALLNZ() {
-    if (!(F & zero)){
-        CALL();
-        return 24;
-    }
-    PC+=2;
-    return 12;
-}
-uint8_t CPU::CALLZ() {
-    if ((F & zero)){
-        CALL();
-        return 24;
-    }
-    PC+=2;
-    return 12;
-}
-uint8_t CPU::CALLNC() {
-    if (!(F & car)){
-        CALL();
-        return 24;
-    }
-    PC+=2;
-    return 12;
-}
-uint8_t CPU::CALLC() {
-    if ((F & car)){
-        CALL();
-        return 24;
-    }
-    PC+=2;
-    return 12;
-}
 void CPU::CALL() {
     uint16_t adr = nn();
     PUSH(PC);
     PC = adr;
-}
-uint8_t CPU::RETNZ() {
-    if (!(F & zero)){
-        PC = POP16();
-        return 20;
-    }
-    return 8;
-}
-uint8_t CPU::RETZ() {
-    if ((F & zero)){
-        PC = POP16();
-        return 20;
-    }
-    return 8;
-}
-uint8_t CPU::RETNC() {
-    if (!(F & car)){
-        PC = POP16();
-        return 20;
-    }
-    return 8;
-}
-uint8_t CPU::RETC() {
-    if ((F & car)){
-        PC = POP16();
-        return 20;
-    }
-    return 8;
 }
 void CPU::RST(uint8_t n) {
     PUSH(PC);
@@ -273,11 +146,11 @@ void CPU::BIT(uint8_t bit, uint8_t value) {
     F |= hcar;
     F |= old_carry;
 }
-void CPU::SET(uint8_t bit, uint8_t& value) {
-    value |= (1 << bit);
+uint8_t CPU::SET(uint8_t bit, uint8_t value) {
+    return value | (1 << bit);
 }
-void CPU::RES(uint8_t bit, uint8_t& value) {
-    value &= ~(1 << bit);
+uint8_t CPU::RES(uint8_t bit, uint8_t value) {
+    return value & ~(1 << bit);
 }
 
 void CPU::RLCA() {
@@ -345,66 +218,76 @@ void CPU::DAA() {
     if (A == 0) F |= zero;
     if (fn) F |= sub;
 }
-void CPU::SRL(uint8_t &reg) {
+uint8_t CPU::SRL(uint8_t reg) {
     bool bit0 = reg & 1;
-    reg = reg >> 1;
+    uint8_t out = reg >> 1;
     F = 0;
-    if (reg == 0) F |= zero;
+    if (out == 0) F |= zero;
     if (bit0) F |= car;
+    return out;
 }
-void CPU::SLA(uint8_t &reg) {
+uint8_t CPU::SLA(uint8_t reg) {
     uint8_t bit7 = (reg >> 7) & 1;
-    reg = reg << 1;
+    uint8_t out = reg << 1;
     
     F = 0;
-    if (reg == 0) F |= zero;
+    if (out == 0) F |= zero;
     if (bit7) F |= car;
+    return out;
 }
-void CPU::SRA(uint8_t &reg) {
+uint8_t CPU::SRA(uint8_t reg) {
     uint8_t bit0 = reg & 1;
     uint8_t bit7 = reg & zero;
     
-    reg = (reg >> 1) | bit7;
+    uint8_t out = (reg >> 1) | bit7;
     F = 0;
-    if (reg == 0) F |= zero;
+    if (out == 0) F |= zero;
     if (bit0) F |= car;
+    return out;
 }
-void CPU::RR(uint8_t &reg) {
+uint8_t CPU::RR(uint8_t reg) {
     uint8_t old_carry = (F >> 4) & 1;
     uint8_t bit0 = reg & 1;
-    reg = (reg >> 1) | (old_carry << 7);
+    uint8_t out = (reg >> 1) | (old_carry << 7);
     F = 0;
     
-    if (reg == 0) F |= zero;
+    if (out == 0) F |= zero;
     if (bit0) F |= car;
+    return out;
 }
-void CPU::RL(uint8_t &reg) {
+
+uint8_t CPU::RL(uint8_t reg) {
     uint8_t old_carry = (F >> 4) & 1;
     uint8_t bit7 = (reg >> 7) & 1;
-    reg = (reg << 1) | old_carry;
+    uint8_t out = (reg << 1) | old_carry;
     F = 0;
-    if (reg == 0) F |= zero;
+    if (out == 0) F |= zero;
     if (bit7) F |= car;
+    return out;
 }
-void CPU::RLC(uint8_t &reg) {
+uint8_t CPU::RLC(uint8_t reg) {
     uint8_t bit7 = (reg >> 7) & 1;
-    reg = (reg << 1) | bit7;
+    uint8_t out = (reg << 1) | bit7;
     F = 0;
-    if (reg == 0) F |= zero;
+    if (out == 0) F |= zero;
     if (bit7) F |= car;
+    return out;
 }
-void CPU::RRC(uint8_t &reg) {
+uint8_t CPU::RRC(uint8_t reg) {
     uint8_t bit0 = reg & 1;
-    reg = (reg >> 1) | (bit0 << 7);
+    uint8_t out = (reg >> 1) | (bit0 << 7);
     F = 0;
-    if (reg == 0) F |= zero;
+    if (out == 0) F |= zero;
     if (bit0) F |= car;
+    return out;
 }
-void CPU::SWAP(uint8_t& n) {
-    n = (n << 4) | (n >> 4);
+uint8_t CPU::SWAP(uint8_t reg) {
+    uint8_t out = (reg << 4) | (reg >> 4);
     F = 0;
-    if (n == 0) F |= zero;
+    if (out == 0) F |= zero;
+    return out;
 }
+
 void CPU::STOP(){
     if (MEM.isCGB && (MEM.readIO(0xFF4D) & 1)){
         MEM.doubleCPUspeed = !MEM.doubleCPUspeed;
@@ -421,250 +304,329 @@ void CPU::init(){
     if (MEM.isCGB){
         MEM.write(0xFF70, 1); // SVBK = 1
     }
-    //
-    /*MEM[0xFF05] = 0x00;  // TIMA
-    MEM[0xFF06] = 0x00;  // TMA
-    MEM[0xFF07] = 0x00;  // TAC
-    MEM[0xFF10] = 0x80;  // NR10
-    MEM[0xFF11] = 0xBF;  // NR11
-    MEM[0xFF12] = 0xF3;  // NR12
-    MEM[0xFF14] = 0xBF;  // NR14
-    MEM[0xFF16] = 0x3F;  // NR21
-    MEM[0xFF17] = 0x00;  // NR22
-    MEM[0xFF19] = 0xBF;  // NR24
-    MEM[0xFF1A] = 0x7F;  // NR30
-    MEM[0xFF1B] = 0xFF;  // NR31
-    MEM[0xFF1C] = 0x9F;  // NR32
-    MEM[0xFF1E] = 0xBF;  // NR33
-    MEM[0xFF20] = 0xFF;  // NR41
-    MEM[0xFF21] = 0x00;  // NR42
-    MEM[0xFF22] = 0x00;  // NR43
-    MEM[0xFF23] = 0xBF;  // NR30
-    MEM[0xFF24] = 0x77;  // NR50
-    MEM[0xFF25] = 0xF3;  // NR51
-    MEM[0xFF26] = 0xF1;  // NR52 (0xF1 for DMG, 0xF0 for SGB)
-    MEM[0xFF40] = 0x91;  // LCDC
-    MEM[0xFF42] = 0x00;  // SCY
-    MEM[0xFF43] = 0x00;  // SCX
-    MEM[0xFF45] = 0x00;  // LYC
-    MEM[0xFF47] = 0xFC;  // BGP
-    MEM[0xFF48] = 0xFF;  // OBP0
-    MEM[0xFF49] = 0xFF;  // OBP1
-    MEM[0xFF4A] = 0x00;  // WY
-    MEM[0xFF4B] = 0x00;  // WX
-    MEM[0xFFFF] = 0x00;  // IE*/
 }
-uint8_t& CPU::getReg(uint8_t registr, int& time){
-    switch (registr) {
-        case 0x00: return B;
-        case 0x01: return C;
-        case 0x02: return D;
-        case 0x03: return E;
-        case 0x04: return H;
-        case 0x05: return L;
-        case 0x06: time *= 2; return MEM.read(HL());
-        case 0x07: return A;
+uint8_t CPU::readTableR(uint8_t code){
+    switch (code) {
+        case (0): return B;
+        case (1): return C;
+        case (2): return D;
+        case (3): return E;
+        case (4): return H;
+        case (5): return L;
+        case (6):
+            extraTime += 4;
+            return MEM.read(HL());
+        case (7): return A;
     }
-    return F;
+    return 0xFF;
+}
+uint16_t CPU::readTableRP(uint8_t code){
+    switch (code) {
+        case (0): return BC();
+        case (1): return DE();
+        case (2): return HL();
+        case (3): return SP;
+    }
+    return 0xFFFF;
+}
+uint16_t CPU::readTableRP2(uint8_t code){
+    switch (code) {
+        case (0): return BC();
+        case (1): return DE();
+        case (2): return HL();
+        case (3): return AF();
+    }
+    return 0xFFFF;
+}
+void CPU::writeTableR(uint8_t code, uint8_t data){
+    switch (code) {
+        case (0): B = data; break;
+        case (1): C = data; break;
+        case (2): D = data; break;
+        case (3): E = data; break;
+        case (4): H = data; break;
+        case (5): L = data; break;
+        case (6):
+            extraTime += 4;
+            MEM.write(HL(), data);
+            break;
+        case (7): A = data; break;
+    }
+}
+void CPU::writeTableRP(uint8_t code, uint16_t data){
+    switch (code) {
+        case (0): SETBC(data); break;
+        case (1): SETDE(data); break;
+        case (2): SETHL(data); break;
+        case (3): SP = data; break;
+    }
+}
+void CPU::writeTableRP2(uint8_t code, uint16_t data){
+    switch (code) {
+        case (0): SETBC(data); break;
+        case (1): SETDE(data); break;
+        case (2): SETHL(data); break;
+        case (3): SETAF(data); break;
+    }
+}
+void CPU::executeTableALU(uint8_t code, uint8_t data){
+    switch (code) {
+        case 0x00: ADD8(data); break;
+        case 0x01: ADC8(data); break;
+        case 0x02: SUB8(data); break;
+        case 0x03: SBC8(data); break;
+        case 0x04: AND8(data); break;
+        case 0x05: XOR8(data); break;
+        case 0x06: OR8(data); break;
+        case 0x07: CP8(data); break;
+    }
+}
+bool CPU::readTableCC(uint8_t code){
+    switch (code) {
+        case(0): return !(F & zero);
+        case(1): return (F & zero);
+        case(2): return !(F & car);
+        case(3): return (F & car);
+    }
+    return false;
+}
+void CPU::executeTableACC(uint8_t code){
+    switch (code) {
+        case 0x00: RLCA(); break;
+        case 0x01: RRCA(); break;
+        case 0x02: RLA(); break;
+        case 0x03: RRA(); break;
+        case 0x04: DAA(); break;
+        case 0x05: CPL(); break;
+        case 0x06: SCF(); break;
+        case 0x07: CCF(); break;
+    }
+}
+void CPU::executeTableRJAO(uint8_t code){
+    switch (code) {
+        case 0x00: break;
+        case 0x01:
+            SAVESP();
+            extraTime += 16;
+            break;
+        case 0x02: STOP(); break;
+        case 0x03:
+            PC += int8_t(n());
+            extraTime += 8;
+            break;
+        case 0x04:
+        case 0x05:
+        case 0x06:
+        case 0x07:
+            if (readTableCC(code - 4)){
+                PC += int8_t(n());
+                extraTime += 8;
+            } else{
+                PC += 1;
+                extraTime += 4;
+            } break;
+    }
+}
+void CPU::executeTableCRAO(uint8_t code){
+    switch (code) {
+        case 0x00:
+        case 0x01:
+        case 0x02:
+        case 0x03:
+            if (readTableCC(code)){
+                PC = POP16();
+                extraTime += 16;
+            }else {
+                extraTime += 4;
+            } break;
+        case 0x04:
+            MEM.write(0xFF00 + n(), A);
+            extraTime += 8;
+            break;
+        case 0x05:
+            extraTime += 12;
+            SP = ADD16S(SP, n());
+            break;
+        case 0x06:
+            extraTime += 8;
+            A = MEM.read(0xFF00 + n());
+            break;
+        case 0x07:
+            extraTime += 8;
+            SETHL(ADD16S(SP, n()));
+            break;
+    }
+}
+void CPU::executeTableCJAO(uint8_t code){
+    switch (code) {
+        case 0x00:
+        case 0x01:
+        case 0x02:
+        case 0x03:
+            if (readTableCC(code)){
+                PC = nn();
+                extraTime += 8;
+            }else {
+                PC += 2;
+                extraTime += 4;
+            } break;
+        case 0x04: MEM.write(0xFF00+C, A); break;
+        case 0x05:
+            MEM.write(nn(), A);
+            extraTime += 8;
+            break;
+        case 0x06: A = MEM.read(0xFF00+C); break;
+        case 0x07:
+            A = MEM.read(nn());
+            extraTime += 8;
+            break;
+    }
+}
+uint8_t CPU::executeTableROT(uint8_t code, uint8_t data){
+    switch (code) {
+        case 0x00: return RLC(data);
+        case 0x01: return RRC(data);
+        case 0x02: return RL(data);
+        case 0x03: return RR(data);
+        case 0x04: return SLA(data);
+        case 0x05: return SRA(data);
+        case 0x06: return SWAP(data);
+        case 0x07: return SRL(data);
+    }
+    return 0xFF;
 }
 int CPU::execute(uint8_t opcode){
-    uint8_t pcode = opcode >> 6;
-    uint8_t code = opcode >> 3 & 0x7;
-    uint8_t registr = opcode & 0x7;
-    int time = 4;
-    switch (pcode) {
+    extraTime = 0;
+    uint8_t x = opcode >> 6;
+    uint8_t y = opcode >> 3 & 0x7;
+    uint8_t z = opcode & 0x7;
+
+    uint8_t q = y & 1;
+    uint8_t p = (y >> 1);
+    switch (x) {
         case 0:
-            switch (opcode) {
-                case 0x00: return 4;
-                case 0x01: SETBC(nn()); return 12;
-                case 0x02: MEM.write(BC(), A); return 8;
-                case 0x03: SETBC(BC()+1); return 8;
-                case 0x04: B = INC8(B); return 4;
-                case 0x05: B = DEC8(B); return 4;
-                case 0x06: B = n(); return 8;
-                case 0x07: RLCA(); return 4;
-                case 0x08: SAVESP(); return 20;
-                case 0x09: SETHL(ADD16(HL(),BC())); return 8;
-                case 0x0A: A = MEM.read(BC()); return 8;
-                case 0x0B: SETBC(BC()-1); return 8;
-                case 0x0C: C = INC8(C); return 4;
-                case 0x0D: C = DEC8(C); return 4;
-                case 0x0E: C = n(); return 8;
-                case 0x0F: RRCA(); return 4;
-                case 0x10: STOP(); return 4;
-                case 0x11: SETDE(nn()); return 12;
-                case 0x12: MEM.write(DE(), A); return 8;
-                case 0x13: SETDE(DE()+1);; return 8;
-                case 0x14: D = INC8(D); return 4;
-                case 0x15: D = DEC8(D); return 4;
-                case 0x16: D = n(); return 8;
-                case 0x17: RLA(); return 4;
-                case 0x18: JR(); return 12;
-                case 0x19: SETHL(ADD16(HL(),DE())); return 8;
-                case 0x1A: A = MEM.read(DE()); return 8;
-                case 0x1B: SETDE(DE()-1); return 8;
-                case 0x1C: E = INC8(E); return 4;
-                case 0x1D: E = DEC8(E); return 4;
-                case 0x1E: E = n(); return 8;
-                case 0x1F: RRA(); return 4;
-                case 0x20: return JRNZ();
-                case 0x21: SETHL(nn()); return 12;
-                case 0x22: MEM.write(HL(), A); SETHL(HL()+1); return 8;
-                case 0x23: SETHL(HL()+1); return 8;
-                case 0x24: H = INC8(H); return 4;
-                case 0x25: H = DEC8(H); return 4;
-                case 0x26: H = n(); return 8;
-                case 0x27: DAA(); return 4;
-                case 0x28: return JRZ();
-                case 0x29: SETHL(ADD16(HL(),HL())); return 8;
-                case 0x2A: A = MEM.read(HL()); SETHL(HL()+1); return 8;
-                case 0x2B: SETHL(HL()-1); return 8;
-                case 0x2C: L = INC8(L); return 4;
-                case 0x2D: L = DEC8(L); return 4;
-                case 0x2E: L = n(); return 8;
-                case 0x2F: CPL(); return 4;
-                case 0x30: return JRNC();
-                case 0x31: SP = nn(); return 12;
-                case 0x32: MEM.write(HL(), A); SETHL(HL()-1); return 8;
-                case 0x33: SP++; return 8;
-                case 0x34: MEM.write(HL(), INC8(MEM.read(HL()))); return 12;
-                case 0x35: MEM.write(HL(), DEC8(MEM.read(HL()))); return 12;
-                case 0x36: MEM.write(HL(), n()); return 12;
-                case 0x37: F &= zero; F |= car; return 4;
-                case 0x38: return JRC();
-                case 0x39: SETHL(ADD16(HL(),SP)); return 8;
-                case 0x3A: A = MEM.read(HL()); SETHL(HL()-1); return 8;
-                case 0x3B: SP--; return 8;
-                case 0x3C: A = INC8(A); return 4;
-                case 0x3D: A = DEC8(A); return 4;
-                case 0x3E: A = n(); return 8;
-                case 0x3F: CCF(); return 4;
+            switch (z) {
+                case (0):
+                    executeTableRJAO(y);
+                    return 4;
+                case (1):{
+                    if (q) {
+                        SETHL(ADD16(HL(), readTableRP(p)));
+                        return 8;
+                    }
+                    writeTableRP(p, nn());
+                } return 12;
+                case (2):{
+                    uint16_t dst;
+                    switch (p) {
+                        case (0): dst = BC(); break;
+                        case (1): dst = DE(); break;
+                        case (2): dst = HL(); SETHL(HL()+1); break;
+                        case (3): dst = HL(); SETHL(HL()-1); break; 
+                    }
+                    if (q) A = MEM.read(dst);
+                    else MEM.write(dst, A);
+                } return 8;
+                case (3):{
+                    if (q) writeTableRP(p, readTableRP(p) - 1);
+                    else writeTableRP(p, readTableRP(p) + 1);
+                } return 8;
+                case (4):
+                    writeTableR(y, INC8(readTableR(y)));
+                    return 4;
+                case (5):
+                    writeTableR(y, DEC8(readTableR(y)));
+                    return 4;
+                case (6):
+                    writeTableR(y, n());
+                    return 8;
+                case (7):
+                    executeTableACC(y);
+                    return 4;
             }
             break;
-        case 1:{
+        case 1:
             if (opcode == 0x76){
                 halt = true;
                 break;
             }
-            uint8_t& out = getReg(code, time);
-            uint8_t& inp = getReg(registr, time);
-            out = inp;
-        } break;
-        case 2:{
-            uint8_t out = getReg(registr, time);
-            switch (code) {
-                case 0x00: ADD8(out); break;
-                case 0x01: ADC8(out); break;
-                case 0x02: SUB8(out); break;
-                case 0x03: SBC8(out); break;
-                case 0x04: AND8(out); break;
-                case 0x05: XOR8(out); break;
-                case 0x06: OR8(out); break;
-                case 0x07: CP8(out); break;
-            }
-        }break;
+            writeTableR(y, readTableR(z));
+            return 4;
+        case 2:
+            executeTableALU(y, readTableR(z));
+            return 4;
         case 3:{
-            switch (opcode) {
-                case 0xC0: return RETNZ();
-                case 0xC1: C = POP(); B = POP(); return 12;
-                case 0xC2: return JNZ();
-                case 0xC3: PC = nn(); return 16;
-                case 0xC4: return CALLNZ();
-                case 0xC5: PUSH(BC()); return 16;
-                case 0xC6: ADD8(n()); return 8;
-                case 0xC7: RST(0x00); return 16;
-                case 0xC8: return RETZ();
-                case 0xC9: PC = POP16(); return 16;
-                case 0xCA: return JZ();
-                case 0xCB: return executeCB(n());
-
-                case 0xD0: return RETNC();
-                case 0xD8: return RETC();
-
-                case 0xD2: return JNC();
-                case 0xDA: return JC();
-                case 0xE9: PC = HL(); return 4;
-                
-                case 0xCC: return CALLZ();
-                case 0xCD: CALL(); return 24;
-                case 0xD4: return CALLNC();
-                case 0xDC: return CALLC();
-
-                case 0xD5: PUSH(DE()); return 16;
-                case 0xE5: PUSH(HL()); return 16;
-                case 0xF5: PUSH(AF()); return 16;
-
-                case 0xD1: E = POP(); D = POP(); return 12;
-                case 0xE1: L = POP(); H = POP(); return 12;
-                case 0xF1: F = POP() & 0xF0; A = POP(); return 12;
-
-                case 0xCE: ADC8(n()); return 8;
-                case 0xD6: SUB8(n()); return 8;
-                case 0xDE: SBC8(n()); return 8;
-
-                case 0xD9: PC = POP16(); ime = true; return 16;
-
-                case 0xD7: RST(0x10); return 16;
-                case 0xE7: RST(0x20); return 16;
-                case 0xF7: RST(0x30); return 16;
-                case 0xCF: RST(0x08); return 16;
-                case 0xDF: RST(0x18); return 16;
-                case 0xEF: RST(0x28); return 16;
-                case 0xFF: RST(0x38); return 16;
-
-                case 0xE0: MEM.write(0xFF00 + n(), A); return 12;
-                case 0xE2: MEM.write(0xFF00 + C, A); return 8;
-                case 0xE6: AND8(n()); return 8;
-
-                case 0xE8: SP = ADD16S(SP, n()); return 16;
-                case 0xF8: SETHL(ADD16S(SP, n())); return 12;
-
-                case 0xEA: MEM.write(nn(), A); return 16;
-                case 0xEE: XOR8(n()); return 8;
-                case 0xF0: A = MEM.read(0xFF00 + n()); return 12;
-                case 0xF2: A = MEM.read(0xFF00 + C); return 8;
-                case 0xF3: ime = false; return 4;
-                case 0xF6: OR8(n()); return 8;
-                case 0xF9: SP = HL(); return 8;
-                case 0xFA: A = MEM.read(nn()); return 16;
-                case 0xFB: ime = true; return 4;
-                case 0xFE: CP8(n()); return 8;
+            switch (z) {
+                case (0):
+                    executeTableCRAO(y);
+                    return 4;
+                case (1):{
+                    if (q){
+                        switch (p) {
+                            case (0): PC = POP16(); return 16;
+                            case (1): PC = POP16(); ime = true; return 16;
+                            case (2): PC = HL(); return 4;
+                            case (3): SP = HL(); return 8;
+                        }
+                    }
+                    else writeTableRP2(p, POP16());
+                    } return 12;
+                case (2):
+                    executeTableCJAO(y);
+                    return 8;
+                case (3):
+                    switch (y) {
+                        case (0): PC = nn(); return 16;
+                        case (1): return executeCB(n());
+                        case (6): ime = false; break;
+                        case (7): ime = true; break;
+                    }
+                    return 4;
+                case (4):
+                    if (readTableCC(y)){
+                        CALL();
+                        extraTime += 12;
+                    } else{
+                        PC += 2;
+                    }return 12;
+                case (5):{
+                    if (q){
+                        CALL();
+                        extraTime += 8;
+                    }
+                    else PUSH(readTableRP2(p));
+                    } return 16;
+                case (6):
+                    executeTableALU(y, n());
+                    return 8;
+                case (7):
+                    RST(y*8);
+                    return 16;
             }
         }break;
     }
-    return time;
+    return 0;
 }
 int CPU::executeCB(uint8_t opcode){
-    uint8_t pcode = opcode >> 6;
-    uint8_t code = opcode >> 3 & 0x7;
-    uint8_t registr = opcode & 0x7;
-    int time = 8;
-    uint8_t& out = getReg(registr, time);
-    switch (pcode) {
+    uint8_t x = opcode >> 6;
+    uint8_t y = opcode >> 3 & 0x7;
+    uint8_t z = opcode & 0x7;
+    uint8_t out = readTableR(z);
+    switch (x) {
         case 0:
-            switch (code) {
-                case 0x00: RLC(out); break;
-                case 0x01: RRC(out); break;
-                case 0x02: RL(out); break;
-                case 0x03: RR(out); break;
-                case 0x04: SLA(out); break;
-                case 0x05: SRA(out); break;
-                case 0x06: SWAP(out); break;
-                case 0x07: SRL(out); break;
-            }
+            writeTableR(z, executeTableROT(y , out));
             break;
-        case 1: // BIT [HL] - 12
-            if (time == 16) time = 12;
-            BIT(code,out);
+        case 1:
+            BIT(y,out);
             break;
         case 2:
-            RES(code,out);
+            writeTableR(z, RES(y,out));
             break;
         case 3:
-            SET(code,out);
+            writeTableR(z, SET(y,out));
             break;
     }
-    return time;
+    return 8;
 }
 void CPU::interrupt(uint8_t n, uint8_t flag){
     IS->IF &= (~flag);
@@ -709,7 +671,7 @@ int CPU::step(){
         // timers works on standart speed
         if (MEM.doubleCPUspeed) execute(n());
     }else time += 4;
-    return time;
+    return time + extraTime;
 }
 
 void CPU::setInterrupt(InterruptState* master){
