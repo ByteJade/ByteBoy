@@ -72,12 +72,12 @@ class MemoryMaster{
     std::string readedFilename;
     uint16_t BGP[32];
     uint16_t OBP[32];
+    uint8_t BGsrc;
+    uint8_t OBsrc;
 
     void updateColor(Color& color, uint16_t data);
     
     HDMAstate hdma;
-
-    int clock = 0;
 public:
     bool isCGB = false;
     bool doubleCPUspeed = false;
