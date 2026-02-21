@@ -217,6 +217,12 @@ uint8_t& MemoryMaster::readIO(uint16_t addr){
         case (0xFF4F):
             if (isCGB) return VRAMbank;
             break;
+        case (0xFF68):
+            if (isCGB) return BGsrc;
+            break;
+        case (0xFF6A):
+            if (isCGB) return OBsrc;
+            break;
         case(0xFF6C): // OPRI
             if (isCGB) return PS->OPRI;
             break;
@@ -382,29 +388,39 @@ void MemoryMaster::writeIO(uint16_t addr, uint8_t data){
                         HDMAstep();
                 }
             } break;
+        case (0xFF68):
+            if (isCGB){
+                BGsrc = data;
+            } break;
         case (0xFF69):
             if (isCGB){
-                uint8_t& reg = readIO(0xFF68);
-                uint8_t id = (reg&0x3F)/2;
-                if (reg%2){
+                uint8_t id = (BGsrc&0x3F)/2;
+                if (BGsrc%2){
                     BGP[id] |= data << 8;
                 }else{
                     BGP[id] = data;
                 }
                 updateColor(PS->BGcolorBuffer[id], BGP[id]);
-                if (reg&0x80) reg++;
+                if (BGsrc&0x80){
+                    BGsrc = ((BGsrc + 1) & 0x3F) | 0x80;
+                }
+            } break;
+        case (0xFF6A):
+            if (isCGB){
+                OBsrc = data;
             } break;
         case (0xFF6B):
             if (isCGB){
-                uint8_t& reg = readIO(0xFF6A);
-                uint8_t id = (reg&0x3F)/2;
-                if (reg%2){
+                uint8_t id = (OBsrc&0x3F)/2;
+                if (OBsrc%2){
                     OBP[id] |= data << 8;
                 }else{
                     OBP[id] = data;
                 }
                 updateColor(PS->OBcolorBuffer[id], OBP[id]);
-                if (reg&0x80) reg++;
+                if (OBsrc&0x80){
+                    OBsrc = ((OBsrc + 1) & 0x3F) | 0x80;
+                }
             } break;
         case(0xFF6C): // OPRI
             if (isCGB) PS->OPRI = data & 1;
