@@ -162,18 +162,18 @@ static void audioCallback(void* userdata, Uint8* stream, int len) {
     }
 }
 APU::APU(MemoryMaster& master) :
-NR52(master.read(0xFF26)), NR10(master.read(0xFF10)),
-NR11(master.read(0xFF11)), NR12(master.read(0xFF12)), 
-NR13(master.read(0xFF13)), NR14(master.read(0xFF14)),
-NR21(master.read(0xFF16)),
-NR22(master.read(0xFF17)), NR23(master.read(0xFF18)),
-NR24(master.read(0xFF19)), NR30(master.read(0xFF1A)),
-NR31(master.read(0xFF1B)), NR32(master.read(0xFF1C)),
-NR33(master.read(0xFF1D)), NR34(master.read(0xFF1E)),
-NR41(master.read(0xFF20)),
-NR42(master.read(0xFF21)), NR43(master.read(0xFF22)),
-NR44(master.read(0xFF23)), NR50(master.read(0xFF24)), NR51(master.read(0xFF25)),
-wave_ram(&master.read(0xFF30))
+NR52(master.readIO(0xFF26)), NR10(master.readIO(0xFF10)),
+NR11(master.readIO(0xFF11)), NR12(master.readIO(0xFF12)), 
+NR13(master.readIO(0xFF13)), NR14(master.readIO(0xFF14)),
+NR21(master.readIO(0xFF16)),
+NR22(master.readIO(0xFF17)), NR23(master.readIO(0xFF18)),
+NR24(master.readIO(0xFF19)), NR30(master.readIO(0xFF1A)),
+NR31(master.readIO(0xFF1B)), NR32(master.readIO(0xFF1C)),
+NR33(master.readIO(0xFF1D)), NR34(master.readIO(0xFF1E)),
+NR41(master.readIO(0xFF20)),
+NR42(master.readIO(0xFF21)), NR43(master.readIO(0xFF22)),
+NR44(master.readIO(0xFF23)), NR50(master.readIO(0xFF24)),
+NR51(master.readIO(0xFF25)), wave_ram(&master.readIO(0xFF30))
 {
     SDL_Init(SDL_INIT_AUDIO);
     spec.freq = SAMPLE_RATE;
