@@ -84,12 +84,12 @@ public:
 
     MemoryMaster(Joypad& joy);
     ~MemoryMaster();
-    uint8_t& read(uint16_t addr);
-    uint8_t& readWRAM(uint16_t addr);
+    uint8_t read(uint16_t addr);
+    uint8_t readWRAM(uint16_t addr);
     uint8_t readVRAM0(uint16_t addr);
     uint8_t readVRAM1(uint16_t addr);
-    uint8_t& readVRAM(uint16_t addr);
-    uint8_t& readOAM(uint16_t addr);
+    uint8_t readVRAM(uint16_t addr);
+    uint8_t readOAM(uint16_t addr);
     uint8_t& readIO(uint16_t addr);
 
     void write(uint16_t addr, uint8_t data);
