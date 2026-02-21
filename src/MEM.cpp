@@ -116,7 +116,7 @@ void MemoryMaster::HDMAstep(){
     }
 }
 static uint8_t fail = 0xFF;
-uint8_t& MemoryMaster::read(uint16_t addr){
+uint8_t MemoryMaster::read(uint16_t addr){
     if (addr < 0x4000){
         return ROM[addr];
     }else if (addr < 0x8000){
@@ -141,7 +141,7 @@ uint8_t& MemoryMaster::read(uint16_t addr){
     }
     return fail;
 }
-uint8_t& MemoryMaster::readWRAM(uint16_t addr){
+uint8_t MemoryMaster::readWRAM(uint16_t addr){
     if (addr < 0xD000){
         return RAM[addr - 0xC000];
     }else{
@@ -155,10 +155,10 @@ uint8_t MemoryMaster::readVRAM0(uint16_t addr){
 uint8_t MemoryMaster::readVRAM1(uint16_t addr){
     return VRAM[addr - 0x6000];
 }
-uint8_t& MemoryMaster::readVRAM(uint16_t addr){
+uint8_t MemoryMaster::readVRAM(uint16_t addr){
     return VRAM[VRAMbank*VRAM_BANKSIZE + addr - 0x8000];
 }
-uint8_t& MemoryMaster::readOAM(uint16_t addr){
+uint8_t MemoryMaster::readOAM(uint16_t addr){
     return OAM[addr-0xFE00];
 }
 uint8_t& MemoryMaster::readIO(uint16_t addr){
