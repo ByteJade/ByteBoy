@@ -2,18 +2,17 @@
 ## GameBoy Color Emulator in C++
 Small DMG/GBC emulator written in C++ with SDL2
 
-### Completed:
+### Completed:  
 - All games supported  
-- MBC5 supported  
+- Full support for MBC 1,2,3,5  
 - Scanline-based PPU  
 - Timer & interrupts  
 - Save files  
-- HDMA
-- Audio process unit
+- Audio process unit  
 - Drag & Drop  
+- HDMA  
 ### WIP:  
-- MCB3/1 support - Basic banking, need accuracy fixes  
-- RTC clock - a time latch needs to be made  
+- RTC clock - needs to be made  
 - Good code?  
 
 ## Accuracy
