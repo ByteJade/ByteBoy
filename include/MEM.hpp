@@ -47,7 +47,8 @@ class MemoryMaster{
     uint16_t totalROMbanks = 1;
     uint16_t totalRAMbanks = 0;
 
-    int32_t ROMoffset = 0;
+    int32_t ROM0offset = 0;
+    int32_t ROM1offset = 0;
     uint32_t RAMoffset = 0;
 
     int16_t ROMbank = 1;
