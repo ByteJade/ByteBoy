@@ -9,6 +9,7 @@ static constexpr int AMPLITUDE = 28000;
 
 static const uint8_t divisor_table[8] = {8, 16, 32, 48, 64, 80, 96, 112};
 static const float duty_table[4] = {0.125f, 0.250f, 0.500f, 0.750f};
+static const float envelope_table[4] = {0.0f, 1.0f, 0.5f, 0.25f};
 
 static void audioCallback(void* userdata, Uint8* stream, int len) {
     APU* self = static_cast<APU*>(userdata);
@@ -35,6 +36,7 @@ static void audioCallback(void* userdata, Uint8* stream, int len) {
 
     float vol1 = (ch1.envelope_volume / 15.0f) * 0.25f;
     float vol2 = (ch2.envelope_volume / 15.0f) * 0.25f;
+    float vol3 = envelope_table[ch3.envelope_volume] * 0.2f;
     float vol4 = (ch4.envelope_volume / 15.0f) * 0.2f;
     float left_volume = (self->NR50 & 0x7) / 7.0f;
     float right_volume = ((self->NR50 >> 4) & 0x7) / 7.0f;
@@ -101,15 +103,7 @@ static void audioCallback(void* userdata, Uint8* stream, int len) {
             
             float sample = (float)sample_4bit / 15.0f;
             
-            float gain = 0.f;
-            switch (ch3.envelope_volume) {
-                case 0: gain = 0.0f; break;
-                case 1: gain = 1.0f; break;
-                case 2: gain = 0.5f; break;
-                case 3: gain = 0.25f; break;
-            }
-            
-            sample *= gain * 0.2;
+            sample *= vol3;
             
             if (self->NR51 & 0x40) {
                 mixed_left += sample;
@@ -179,12 +173,7 @@ NR51(master.readIO(0xFF25)), wave_ram(&master.readIO(0xFF30))
     SDL_PauseAudioDevice(device, 0);
 }
 APU::~APU(){
-    if (device != 0) {
-        SDL_PauseAudioDevice(device, 1);
-        SDL_Delay(10);
-        SDL_CloseAudioDevice(device);
-        device = 0;
-    }
+    if (device) SDL_CloseAudioDevice(device);
 }
 void APU::updateEvelope(Channel& ch, bool dir){
     ch.envelope_counter++;
