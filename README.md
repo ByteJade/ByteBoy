@@ -19,8 +19,7 @@ Small DMG/GBC emulator written in C++ with SDL2
 cpu_instrs (blargg): pass  
 instr_timing (blargg): pass  
 acid2 tests (mattcurrie): pass  
-MCB5 tests (mooneye): pass  
-MCB3/1 tests (mooneye): fail
+MCB5/3/1 tests (mooneye): pass  
 
 ## Controls
 D-Pad - W A S D  
