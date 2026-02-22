@@ -39,6 +39,7 @@ static void audioCallback(void* userdata, Uint8* stream, int len) {
     float left_volume = (self->NR50 & 0x7) / 7.0f;
     float right_volume = ((self->NR50 >> 4) & 0x7) / 7.0f;
 
+    bool dac_enabled = self->NR30 & 0x80;
     for (int i = 0; i < samples; i+=2) {
         float mixed_left = 0.f;
         float mixed_right = 0.f;
@@ -83,7 +84,6 @@ static void audioCallback(void* userdata, Uint8* stream, int len) {
             self->updateEvelope(ch2, dir2);
             self->updateLenght(ch2);
         }
-        bool dac_enabled = (self->NR30 >> 7) & 0x01;
         if (ch3.active && dac_enabled) {
             ch3.phase += ch3F / SAMPLE_RATE;
             if (ch3.phase >= 1.0f) ch3.phase -= 1.0f;
@@ -94,7 +94,7 @@ static void audioCallback(void* userdata, Uint8* stream, int len) {
             uint8_t sample_4bit;
             
             if (sample_index % 2 == 0) {
-                sample_4bit = (wave_byte >> 4) & 0x0F;
+                sample_4bit = wave_byte >> 4;
             } else {
                 sample_4bit = wave_byte & 0x0F;
             }
@@ -147,8 +147,8 @@ static void audioCallback(void* userdata, Uint8* stream, int len) {
             self->updateLenght(ch4);
         }
         
-        mixed_left = std::max(-1.0f, std::min(1.0f, mixed_left * left_volume));
-        mixed_right = std::max(-1.0f, std::min(1.0f, mixed_right * right_volume));
+        mixed_left *= left_volume;
+        mixed_right *= right_volume;
         
         buffer[i] = static_cast<Sint16>(AMPLITUDE * mixed_left);
         buffer[i+1] = static_cast<Sint16>(AMPLITUDE * mixed_right);
