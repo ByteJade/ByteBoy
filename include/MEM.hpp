@@ -17,16 +17,16 @@ enum MBC{
 };
 
 struct HDMAstate{
-    uint8_t src_low;
-    uint8_t src_hight;
-    uint8_t dst_low;
-    uint8_t dst_hight;
-    uint8_t hdma5{false};
+    uint8_t src_low{0};
+    uint8_t src_hight{0};
+    uint8_t dst_low{0};
+    uint8_t dst_hight{0};
+    uint8_t hdma5{0};
 
-    uint16_t src;
-    uint16_t dst;
-    uint16_t len;
-    bool work;
+    uint16_t src{0};
+    uint16_t dst{0};
+    uint16_t len{0};
+    bool work{false};
 };
 
 class PPU;
