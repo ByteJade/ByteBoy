@@ -29,12 +29,14 @@ struct HDMAstate{
     bool work;
 };
 
+class PPU;
+class Joypad;
+class Timer;
 class MemoryMaster{
     InterruptState* IS;
-    TimerState* TS;
-    PPUState* PS;
-    JoypadState* JS;
-    Joypad& joypad;
+    Timer* timer;
+    PPU* ppu;
+    Joypad* joypad;
 
     uint8_t* ROM{nullptr};
     uint8_t* CRAM{nullptr};
@@ -70,19 +72,13 @@ class MemoryMaster{
     void readSaveFromFile();
     void writeSaveToFile();
     std::string readedFilename;
-    uint16_t BGP[32];
-    uint16_t OBP[32];
-    uint8_t BGsrc;
-    uint8_t OBsrc;
-
-    void updateColor(Color& color, uint16_t data);
     
     HDMAstate hdma;
 public:
     bool isCGB = false;
     bool doubleCPUspeed = false;
 
-    MemoryMaster(Joypad& joy);
+    MemoryMaster();
     ~MemoryMaster();
     uint8_t read(uint16_t addr);
     uint8_t readWRAM(uint16_t addr);
@@ -100,10 +96,8 @@ public:
     void HDMAstep();
     bool readFromFile(const char* filename);
 
-    void setTimer(TimerState* master);
-    void setJoypad(JoypadState* master);
-    void setPPU(PPUState* master);
+    void setTimer(Timer* master);
+    void setJoypad(Joypad* master);
+    void setPPU(PPU* master);
     void setInterrupt(InterruptState* master);
-
-    void checkLYC();
 };

@@ -17,6 +17,9 @@ public:
     uint8_t buttons{0xFF};
     
     void update();
-    JoypadState* get();
+
+    bool write(uint16_t addr, uint8_t data);
+    bool read(uint16_t addr, uint8_t& data);
+    
     void setInterrupt(InterruptState* master);
 };

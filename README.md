@@ -10,7 +10,6 @@ Small DMG/GBC emulator written in C++ with SDL2
 - Save files  
 - HDMA  
 ### WIP:  
-- Correct APU sound - does not fully correspond to the original  
 - MCB3/1 support - Basic banking, need accuracy fixes  
 - RTC clock - a time latch needs to be made  
 - Good code?  

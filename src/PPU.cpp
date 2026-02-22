@@ -6,7 +6,15 @@
 
 PPU::PPU(MemoryMaster& master, Window& window) : MEM(master),
 screen(window)
-{
+{ }
+
+void PPU::updateColor(Color& color, uint16_t data){
+    uint8_t r = (data & 0x1F);
+    uint8_t g = (data >> 5) & 0x1F;
+    uint8_t b = (data >> 10) & 0x1F;
+    color.r = (r << 3) | (r >> 2);
+    color.g = (g << 3) | (g >> 2);
+    color.b = (b << 3) | (b >> 2);
 }
 void PPU::update(){
     IS->STAT = (IS->STAT&0b11111100)|MODE;
@@ -314,6 +322,17 @@ int PPU::cost(){
     }
     return 0;
 }
+
+void PPU::checkLYC(){
+    if (self.LY == self.LYC){
+        IS->STAT |= 0x04;
+        if (IS->STAT & 0x40)
+            IS->IF |= STAT;
+    }else {
+        IS->STAT &= ~0x04;
+    }
+}
+
 void PPU::step(int time){
     if ( !(self.LCDC >> 7) )
     {
@@ -329,14 +348,14 @@ void PPU::step(int time){
         switch (MODE) {
             case 0:
                 self.LY++;
-                MEM.checkLYC();
+                checkLYC();
                 if (self.LY >= SCH) { setVBLANK(); }
                 else setSEARCH();
                 MEM.HDMAstep();
                 break;
             case 1:
                 self.LY++;
-                MEM.checkLYC();
+                checkLYC();
                 if (self.LY > 153){
                     self.LY = 0;
                     wline = 0;
@@ -356,9 +375,119 @@ void PPU::step(int time){
         }
     }
 }
-
-PPUState* PPU::get(){
-    return &self;
+bool PPU::write(uint16_t addr, uint8_t data){
+    switch (addr) {
+        case(0xFF40): // LCDC
+            self.LCDC = data;
+            return true;
+        case(0xFF42): // SCY
+            self.SCY = data;
+            return true;
+        case(0xFF43): // SCX
+            self.SCX = data;
+            return true;
+        case(0xFF44): // LY
+            return true;
+        case(0xFF45): // LYC
+            self.LYC = data;
+            checkLYC();
+            return true;
+        case(0xFF47): // BGP
+            self.BGP = data;
+            return true;
+        case(0xFF48): // OBP0
+            self.OBP0 = data;
+            return true;
+        case(0xFF49): // OBP1
+            self.OBP1 = data;
+            return true;
+        case(0xFF4A): // WY
+            self.WY = data;
+            return true;
+        case(0xFF4B): // WX
+            self.WX = data;
+            return true;
+        case (0xFF68):
+            if (MEM.isCGB) BGsrc = data;
+            return true;
+        case (0xFF69):
+            if (MEM.isCGB){
+                uint8_t id = (BGsrc&0x3F)/2;
+                if (BGsrc%2){
+                    BGP[id] |= data << 8;
+                }else{
+                    BGP[id] = data;
+                }
+                updateColor(self.BGcolorBuffer[id], BGP[id]);
+                if (BGsrc&0x80){
+                    BGsrc = ((BGsrc + 1) & 0x3F) | 0x80;
+                }
+            } return true;
+        case (0xFF6A):
+            if (MEM.isCGB) OBsrc = data;
+            return true;
+        case (0xFF6B):
+            if (MEM.isCGB){
+                uint8_t id = (OBsrc&0x3F)/2;
+                if (OBsrc%2){
+                    OBP[id] |= data << 8;
+                }else{
+                    OBP[id] = data;
+                }
+                updateColor(self.OBcolorBuffer[id], OBP[id]);
+                if (OBsrc&0x80){
+                    OBsrc = ((OBsrc + 1) & 0x3F) | 0x80;
+                }
+            } return true;
+        case(0xFF6C): // OPRI
+            if (MEM.isCGB) self.OPRI = data & 1;
+            return true;
+    }
+    return false;
+}
+bool PPU::read(uint16_t addr, uint8_t& data){
+    switch (addr) {
+        case(0xFF40): // LCDC
+            data = self.LCDC;
+            return true;
+        case(0xFF42): // SCY
+            data = self.SCY;
+            return true;
+        case(0xFF43): // SCX
+            data = self.SCX;
+            return true;
+        case(0xFF44): // LY
+            data = self.LY;
+            return true;
+        case(0xFF45): // LYC
+            data = self.LYC;
+            return true;
+        case(0xFF47): // BGP
+            data = self.BGP;
+            return true;
+        case(0xFF48): // OBP0
+            data = self.OBP0;
+            return true;
+        case(0xFF49): // OBP1
+            data = self.OBP1;
+            return true;
+        case(0xFF4A): // WY
+            data = self.WY;
+            return true;
+        case(0xFF4B): // WX
+            data = self.WX;
+            return true;
+        case (0xFF68):
+            if (MEM.isCGB) data = BGsrc;
+            return true;
+        case (0xFF6A):
+            if (MEM.isCGB) data = OBsrc;
+            return true;
+        case(0xFF6C): // OPRI
+            if (MEM.isCGB) data = self.OPRI;
+            return true;
+    }
+    return false;
 }
 
 void PPU::setInterrupt(InterruptState* master){

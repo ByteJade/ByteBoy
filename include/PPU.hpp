@@ -1,4 +1,21 @@
 #include "types.hpp"
+#include <cstdint>
+
+struct PPUState{
+    uint8_t LCDC{0};
+    uint8_t SCY{0};
+    uint8_t SCX{0};
+    uint8_t LY{0};
+    uint8_t LYC{0};
+    uint8_t BGP{0};
+    uint8_t OBP0{0};
+    uint8_t OBP1{0};
+    uint8_t WY{0};
+    uint8_t WX{0};
+    uint8_t OPRI{0};
+    Color BGcolorBuffer[32];
+    Color OBcolorBuffer[32];
+};
 
 class MemoryMaster;
 class Window;
@@ -18,6 +35,13 @@ class PPU{
     uint8_t BGlines[SCW];
     uint8_t OBlines[SCW];
 
+    uint16_t BGP[32];
+    uint16_t OBP[32];
+    uint8_t BGsrc;
+    uint8_t OBsrc;
+
+    void updateColor(Color& color, uint16_t data);
+
     void update();
     void setHBLANK();
     void setVBLANK();
@@ -32,10 +56,14 @@ class PPU{
     
     void drawline(int& x, int dx, int dy, uint16_t tilemap);
     int cost();
+
+    void checkLYC();
 public:
     PPU(MemoryMaster& master, Window& window);
     void step(int time);
 
-    PPUState* get();
+    bool write(uint16_t addr, uint8_t data);
+    bool read(uint16_t addr, uint8_t& data);
+    
     void setInterrupt(InterruptState* master);
 };

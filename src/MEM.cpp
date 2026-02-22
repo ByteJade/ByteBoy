@@ -1,7 +1,10 @@
+#include <cstdint>
 #include <fstream>
 #include <iostream>
 
 #include "../include/MEM.hpp"
+#include "../include/PPU.hpp"
+#include "../include/Timer.hpp"
 #include "../include/Display.hpp"
 
 void extractFilename(std::string& path) {
@@ -11,7 +14,7 @@ void extractFilename(std::string& path) {
     }
 }
 
-MemoryMaster::MemoryMaster(Joypad& joy) : joypad(joy){
+MemoryMaster::MemoryMaster(){
     OAM = new uint8_t[0xA0];
     IO = new uint8_t[0x100];
 }
@@ -95,14 +98,6 @@ void MemoryMaster::updateRAMoffset(uint16_t data){
     RAMoffset &= (totalRAMbanks - 1);
     RAMoffset *=  CRAM_BANKSIZE;
 }
-void MemoryMaster::updateColor(Color& color, uint16_t data){
-    uint8_t r = (data & 0x1F);
-    uint8_t g = (data >> 5) & 0x1F;
-    uint8_t b = (data >> 10) & 0x1F;
-    color.r = (r << 3) | (r >> 2);
-    color.g = (g << 3) | (g >> 2);
-    color.b = (b << 3) | (b >> 2);
-}
 void MemoryMaster::HDMAstep(){
     if (!hdma.work) return;
 
@@ -162,39 +157,17 @@ uint8_t MemoryMaster::readOAM(uint16_t addr){
     return OAM[addr-0xFE00];
 }
 uint8_t& MemoryMaster::readIO(uint16_t addr){
+    static uint8_t data = 0xFF;
+    if (ppu->read(addr, data)) return data;
+    if (timer->read(addr, data)) return data;
+    if (joypad->read(addr, data)) return data;
     switch (addr) {
-        case(0xFF00): // Joypad
-            return JS->Joypad;
-        case(0xFF04): // DIV
-            return TS->DIV;
-        case(0xFF05): // TIMA
-            return TS->TIMA;
-        case(0xFF06): // TMA
-            return TS->TMA;
-        case(0xFF07): // TAC
-            return TS->TAC;
         case(0xFF0F): // IF
             return IS->IF;
-        case(0xFF40): // LCDC
-            return PS->LCDC;
         case(0xFF41): // STAT
             return IS->STAT;
-        case(0xFF42): // SCY
-            return PS->SCY;
-        case(0xFF43): // SCX
-            return PS->SCX;
-        case(0xFF44): // LY
-            return PS->LY;
-        case(0xFF45): // LYC
-            return PS->LYC;
         case(0xFF46): // DMA
             return fail;
-        case(0xFF47): // BGP
-            return PS->BGP;
-        case(0xFF48): // OBP0
-            return PS->OBP0;
-        case(0xFF49): // OBP1
-            return PS->OBP1;
         case(0xFF51): // HDMA1
             if (isCGB) return hdma.src_hight;
             break;
@@ -210,21 +183,8 @@ uint8_t& MemoryMaster::readIO(uint16_t addr){
         case (0xFF55):
             if (isCGB) return hdma.hdma5;
             break;
-        case(0xFF4A): // WY
-            return PS->WY;
-        case(0xFF4B): // WX
-            return PS->WX;
         case (0xFF4F):
             if (isCGB) return VRAMbank;
-            break;
-        case (0xFF68):
-            if (isCGB) return BGsrc;
-            break;
-        case (0xFF6A):
-            if (isCGB) return OBsrc;
-            break;
-        case(0xFF6C): // OPRI
-            if (isCGB) return PS->OPRI;
             break;
         case(0xFF70): // WBK
             if (isCGB) return WRAMbank;
@@ -283,44 +243,15 @@ void MemoryMaster::writeOAM(uint16_t addr, uint8_t data){
     OAM[addr-0xFE00] = data;
 }
 void MemoryMaster::writeIO(uint16_t addr, uint8_t data){
+    if (ppu->write(addr, data)) return;
+    if (timer->write(addr, data)) return;
+    if (joypad->write(addr, data)) return;
     switch (addr) {
-        case(0xFF00): // Joypad
-            JS->Joypad = (data&0xF0) | (JS->Joypad&0xF);
-            joypad.update();
-            break;
-        case(0xFF04): // DIV
-            TS->DIV = 0;
-            TS->internalDIV = 0;
-            break;
-        case(0xFF05): // TIMA
-            TS->TIMA = data;
-            break;
-        case(0xFF06): // TMA
-            TS->TMA = data;
-            break;
-        case(0xFF07): // TAC
-            TS->TAC = data & 7;
-            break;
         case(0xFF0F): // IF
             IS->IF = data;
             break;
-        case(0xFF40): // LCDC
-            PS->LCDC = data;
-            break;
         case(0xFF41): // STAT
             IS->STAT = (IS->STAT & 0x87) | (data & 0x78);
-            break;
-        case(0xFF42): // SCY
-            PS->SCY = data;
-            break;
-        case(0xFF43): // SCX
-            PS->SCX = data;
-            break;
-        case(0xFF44): // LY
-            break;
-        case(0xFF45): // LYC
-            PS->LYC = data;
-            checkLYC();
             break;
         case (0xFF46):{
             uint16_t value = data << 8;
@@ -328,21 +259,6 @@ void MemoryMaster::writeIO(uint16_t addr, uint8_t data){
                 OAM[x] = read(value+x);
             } break;
         }
-        case(0xFF47): // BGP
-            PS->BGP = data;
-            break;
-        case(0xFF48): // OBP0
-            PS->OBP0 = data;
-            break;
-        case(0xFF49): // OBP1
-            PS->OBP1 = data;
-            break;
-        case(0xFF4A): // WY
-            PS->WY = data;
-            break;
-        case(0xFF4B): // WX
-            PS->WX = data;
-            break;
         case (0xFF4F):
             if (isCGB){
                 VRAMbank = data & 1;
@@ -388,43 +304,6 @@ void MemoryMaster::writeIO(uint16_t addr, uint8_t data){
                         HDMAstep();
                 }
             } break;
-        case (0xFF68):
-            if (isCGB){
-                BGsrc = data;
-            } break;
-        case (0xFF69):
-            if (isCGB){
-                uint8_t id = (BGsrc&0x3F)/2;
-                if (BGsrc%2){
-                    BGP[id] |= data << 8;
-                }else{
-                    BGP[id] = data;
-                }
-                updateColor(PS->BGcolorBuffer[id], BGP[id]);
-                if (BGsrc&0x80){
-                    BGsrc = ((BGsrc + 1) & 0x3F) | 0x80;
-                }
-            } break;
-        case (0xFF6A):
-            if (isCGB){
-                OBsrc = data;
-            } break;
-        case (0xFF6B):
-            if (isCGB){
-                uint8_t id = (OBsrc&0x3F)/2;
-                if (OBsrc%2){
-                    OBP[id] |= data << 8;
-                }else{
-                    OBP[id] = data;
-                }
-                updateColor(PS->OBcolorBuffer[id], OBP[id]);
-                if (OBsrc&0x80){
-                    OBsrc = ((OBsrc + 1) & 0x3F) | 0x80;
-                }
-            } break;
-        case(0xFF6C): // OPRI
-            if (isCGB) PS->OPRI = data & 1;
-            break;
         case (0xFF70):
             if (isCGB){
                 WRAMbank = data & 0x07;
@@ -543,25 +422,15 @@ bool MemoryMaster::readFromFile(const char* filename){
 
     return true;
 }
-void MemoryMaster::setTimer(TimerState* master){
-    TS = master;
+void MemoryMaster::setTimer(Timer* master){
+    timer = master;
 }
-void MemoryMaster::setJoypad(JoypadState* master){
-    JS = master;
+void MemoryMaster::setJoypad(Joypad* master){
+    joypad = master;
 }
-void MemoryMaster::setPPU(PPUState* master){
-    PS = master;
+void MemoryMaster::setPPU(PPU* master){
+    ppu = master;
 }
 void MemoryMaster::setInterrupt(InterruptState* master){
     IS = master;
-}
-
-void MemoryMaster::checkLYC(){
-    if (PS->LY == PS->LYC){
-        IS->STAT |= 0x04;
-        if (IS->STAT & 0x40)
-            IS->IF |= STAT;
-    }else {
-        IS->STAT &= ~0x04;
-    }
 }

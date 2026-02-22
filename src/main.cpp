@@ -16,13 +16,12 @@ public:
     APU AP;
     Timer timer;
 
-    GameBoy() : context(640,576,"gbc.emu"),
-    MEM(context.joypad), GB(MEM),
+    GameBoy() : context(640,576,"gbc.emu"), GB(MEM),
     GC(MEM, context), AP(MEM)
     {
-        MEM.setTimer(timer.get());
-        MEM.setPPU(GC.get());
-        MEM.setJoypad(context.joypad.get());
+        MEM.setTimer(&timer);
+        MEM.setJoypad(&context.joypad);
+        MEM.setPPU(&GC);
 
         MEM.setInterrupt(&bus);
         GB.setInterrupt(&bus);

@@ -20,9 +20,11 @@ static void audioCallback(void* userdata, Uint8* stream, int len) {
     Sint16* buffer = reinterpret_cast<Sint16*>(stream);
     int samples = len / sizeof(Sint16);
 
-    uint8_t clock_shift = (self->NR43 >> 4) & 0xF;
-    uint8_t counter_step = (self->NR43 >> 3) & 0x1;
-    uint8_t dividing_ratio = self->NR43 & 0x7;
+    uint8_t clock_shift = (self->NR43 >> 4);
+    uint8_t counter_step = (self->NR43 >> 3) & 1;
+    float ch2F = 131072.0f / (2048.0f - ch2.current_F);
+    float ch3F = 131072.0f / (2048.0f - ch3.current_F);
+    float lfsr_frequency = 4194304.0f / (ch4.current_F << clock_shift);
 
     float duty_cycle1 = duty_table[(self->NR11 >> 6) & 3];
     float duty_cycle2 = duty_table[(self->NR21 >> 6) & 3];
@@ -31,7 +33,9 @@ static void audioCallback(void* userdata, Uint8* stream, int len) {
     bool dir2 = (self->NR22 >> 3) & 1;
     bool dir4 = (self->NR42 >> 3) & 1;
 
-
+    float vol1 = (ch1.envelope_volume / 15.0f) * 0.25f;
+    float vol2 = (ch2.envelope_volume / 15.0f) * 0.25f;
+    float vol4 = (ch4.envelope_volume / 15.0f) * 0.2f;
     float left_volume = (self->NR50 & 0x7) / 7.0f;
     float right_volume = ((self->NR50 >> 4) & 0x7) / 7.0f;
 
@@ -43,13 +47,13 @@ static void audioCallback(void* userdata, Uint8* stream, int len) {
             
             float sample = (fmod(ch1.phase, 1.0f) < duty_cycle1) ? 1.0f : 0.0f;
             
-            sample *= (ch1.envelope_volume / 15.0f);
+            sample *= vol1;
             
             if (self->NR51 & 0x10) {
-                mixed_left += sample * 0.25f;
+                mixed_left += sample;
             }
             if (self->NR51 & 0x01) {
-                mixed_right += sample * 0.25f;
+                mixed_right += sample;
             }
             
             ch1.phase += frequency / SAMPLE_RATE;
@@ -62,20 +66,18 @@ static void audioCallback(void* userdata, Uint8* stream, int len) {
         }
         
         if (ch2.active) {
-            float frequency = 131072.0f / (2048.0f - ch2.current_F);
-            
             float sample = (fmod(ch2.phase, 1.0f) < duty_cycle2) ? 1.0f : 0.0f;
 
-            sample *= (ch2.envelope_volume / 15.0f);
+            sample *= vol2;
             
             if (self->NR51 & 0x20) {
-                mixed_left += sample * 0.25f;
+                mixed_left += sample;
             }
             if (self->NR51 & 0x02) {
-                mixed_right += sample * 0.25f;
+                mixed_right += sample;
             }
 
-            ch2.phase += frequency / SAMPLE_RATE;
+            ch2.phase += ch2F / SAMPLE_RATE;
             if (ch2.phase >= 1.0f) ch2.phase -= 1.0f;
             
             self->updateEvelope(ch2, dir2);
@@ -83,12 +85,10 @@ static void audioCallback(void* userdata, Uint8* stream, int len) {
         }
         bool dac_enabled = (self->NR30 >> 7) & 0x01;
         if (ch3.active && dac_enabled) {
-            float frequency = 131072.0f / (2048.0f - ch3.current_F);
-            
-            ch3.phase += frequency / SAMPLE_RATE;
+            ch3.phase += ch3F / SAMPLE_RATE;
             if (ch3.phase >= 1.0f) ch3.phase -= 1.0f;
             
-            int sample_index = (int)(ch3.phase * 64.0f) % 64;
+            int sample_index = (int)(ch3.phase * 32.0f) % 32;
             
             uint8_t wave_byte = self->wave_ram[sample_index / 2];
             uint8_t sample_4bit;
@@ -109,45 +109,38 @@ static void audioCallback(void* userdata, Uint8* stream, int len) {
                 case 3: gain = 0.25f; break;
             }
             
-            sample *= gain;
+            sample *= gain * 0.2;
             
             if (self->NR51 & 0x40) {
-                mixed_left += (sample * 0.25f) / 4.f;
+                mixed_left += sample;
             }
             if (self->NR51 & 0x04) {
-                mixed_right += (sample * 0.25f) / 4.f;
+                mixed_right += sample;
             }
             
             self->updateLenght(ch3);
         }
 
         if (ch4.active) {
-            uint8_t r = divisor_table[dividing_ratio];
-            
-            float lfsr_frequency = 524288.0f / (r * (1 << (clock_shift + 1)));
-            
             ch4.phase += lfsr_frequency / SAMPLE_RATE;
             
             if (ch4.phase >= 1.0f) {
                 ch4.phase -= 1.0f;
-                uint16_t feedback = ((ch4.lfsr >> 0) & 1) ^ ((ch4.lfsr >> 1) & 1);
-                
-                if (counter_step == 0) {
-                    ch4.lfsr = (ch4.lfsr >> 1) | (feedback << 14);
-                } else {
-                    ch4.lfsr = (ch4.lfsr >> 1) | (feedback << 6);
-                    ch4.lfsr |= 0xFF80;
+                uint16_t feedback = (ch4.lfsr & 1) ^ ((ch4.lfsr >> 1) & 1);
+                ch4.lfsr >>= 1;
+                ch4.lfsr |= feedback << 14;
+                if (counter_step){
+                    ch4.lfsr &= ~0x40; // reset bit 7
+                    ch4.lfsr |= feedback << 6;
                 }
             }
-            float sample = (ch4.lfsr & 1) ? 1.0f : -1.0f;
-            
-            sample *= (ch4.envelope_volume / 15.0f);
+            float sample = -(~(ch4.lfsr) & 1) * vol4;
             
             if (self->NR51 & 0x80) {
-                mixed_left += (sample * 0.25f) / 4.f;
+                mixed_left += sample;
             }
             if (self->NR51 & 0x08) {
-                mixed_right += (sample * 0.25f) / 4.f;
+                mixed_right += sample;
             }
 
             self->updateEvelope(ch4, dir4);
@@ -260,9 +253,9 @@ void APU::step(){
     }
     if (NR14 & 0x80) {
         SweepChannel.active = true;
+        SweepChannel.phase = 0.0f;
 
         SweepChannel.current_F = ((NR14 & 0x7) << 8) | NR13;
-        SweepChannel.phase = 0.0f;
         SweepChannel.counter = 0;
 
         SweepChannel.envelope_counter = 0;
@@ -277,9 +270,9 @@ void APU::step(){
     }
     if (NR24 & 0x80) {
         BahChannel.active = true;
+        BahChannel.phase = 0.0f;
 
         BahChannel.current_F = ((NR24 & 0x7) << 8) | NR23;
-        BahChannel.phase = 0.0f;
 
         BahChannel.envelope_counter = 0;
         BahChannel.envelope_period = NR22 & 0x07;
@@ -296,7 +289,6 @@ void APU::step(){
         WaveChannel.current_F = ((NR34 & 0x07) << 8) | NR33;
         WaveChannel.phase = 0.0f;
         
-        
         WaveChannel.envelope_volume = (NR32 >> 5) & 3;
 
         WaveChannel.length_timer = 256 - NR31;
@@ -308,15 +300,10 @@ void APU::step(){
     }
     if (NR44 & 0x80) {
         NoiseChannel.active = true;
-        
-        uint8_t counter_step = (NR43 >> 3) & 1;
-        if (counter_step == 0) {
-            NoiseChannel.lfsr = 0x7FFF;
-        } else {
-            NoiseChannel.lfsr = 0x7F;
-            NoiseChannel.lfsr |= 0xFF80;
-        }
-        
+        NoiseChannel.phase = 0.f;
+
+        NoiseChannel.lfsr = 0x7FFF;
+        NoiseChannel.current_F = divisor_table[(NR34 & 0x07)];
         NoiseChannel.counter = 0.0f;
         
         NoiseChannel.envelope_volume = (NR42 >> 4) & 0xF;
