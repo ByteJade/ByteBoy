@@ -30,28 +30,44 @@ MemoryMaster::~MemoryMaster(){
     delete[] OAM;
     delete[] IO;
 }
+// idk how, but this is work
 void MemoryMaster::handleMBC1(uint16_t addr, uint8_t data){
     if (addr < 0x2000){
         if (CRAMsize == 0) return;
         CRAMenable = (data&0x0F) == 0x0A;
     }else if (addr < 0x4000){
-        updateROMoffset((ROMbank & 0x60) | (data  & 0x1F));
+        uint8_t bank = data & 0x1F;
+        if (bank == 0) bank++;
+        if (bankingMode) updateROMoffset(bank);
+        else updateROMoffset((ROMbank & 0x60) | bank);
     }else if (addr < 0x6000){
         uint8_t bank = data & 0x03;
+        uint8_t bankHight = bank << 5;
+        updateROMoffset((ROMbank & 0x1F) | bankHight);
         if (bankingMode) {
-           updateRAMoffset(bank);
-        } else {
-            updateROMoffset((ROMbank & 0x1F) | (bank << 5));
+            updateRAMoffset(bank);
+            uint16_t ROM0bank = bankHight & (totalROMbanks - 1);
+            ROM0offset = ROM0bank * ROM_BANKSIZE;
         }
     }else{
         bankingMode = data & 0x01;
-        if (!bankingMode) RAMoffset = 0;
+        if (bankingMode){
+            uint16_t ROM0bank = (ROMbank & 0x60) & (totalROMbanks - 1);
+            ROM0offset = ROM0bank * ROM_BANKSIZE;
+            updateROMoffset(ROMbank & 0x1F);
+        }
+        else{
+            ROM0offset = 0;
+            RAMoffset = 0;
+        }
     }
 }
 void MemoryMaster::handleMBC2(uint16_t addr, uint8_t data){
     if (addr & 0x0100){
         if (addr < 0x4000){
-            updateROMoffset(data & 0xF);
+            uint8_t bank = data & 0xF;
+            if (bank == 0) bank++;
+            updateROMoffset(bank);
         }
     }else if (addr < 0x2000){
         if (CRAMsize == 0) return;
@@ -70,7 +86,6 @@ void MemoryMaster::handleMBC3(uint16_t addr, uint8_t data){
         // RTC
     //}
 }
-// idk why, but only MBC5 works correctly
 void MemoryMaster::handleMBC5(uint16_t addr, uint8_t data){
     if (addr < 0x2000){
         if (CRAMsize == 0) return;
@@ -87,11 +102,8 @@ void MemoryMaster::handleMBC5(uint16_t addr, uint8_t data){
 }
 void MemoryMaster::updateROMoffset(uint16_t data){
     ROMbank = data;
-
-    if (MBCtype != MBC2) ROMbank &= (totalROMbanks - 1);
-    else ROMbank %= (totalROMbanks);
-    if (ROMbank == 0 && MBCtype != MBC5) ROMbank = 1;
-    ROMoffset = (ROMbank-1) * ROM_BANKSIZE;
+    ROMbank &= (totalROMbanks - 1);
+    ROM1offset = (ROMbank-1) * ROM_BANKSIZE;
 }
 void MemoryMaster::updateRAMoffset(uint16_t data){
     RAMoffset = data;
@@ -113,9 +125,9 @@ void MemoryMaster::HDMAstep(){
 static uint8_t fail = 0xFF;
 uint8_t MemoryMaster::read(uint16_t addr){
     if (addr < 0x4000){
-        return ROM[addr];
+        return ROM[ROM0offset + addr];
     }else if (addr < 0x8000){
-        return ROM[ROMoffset + addr];
+        return ROM[ROM1offset + addr];
     }else if (addr < 0xA000){
         return readVRAM(addr);
     }else if (addr < 0xC000){
