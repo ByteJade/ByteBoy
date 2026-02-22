@@ -335,13 +335,7 @@ void PPU::checkLYC(){
 
 void PPU::step(int time){
     if ( !(self.LCDC >> 7) )
-    {
-        self.LY = 0;
-        wline = 0;
-        MODE = 0;
-        IS->STAT &= 0b11111100;
-        return;
-    }
+    { return; }
     timeCounter -= time;
     if (timeCounter <= 0){
         timeCounter += cost();
@@ -379,6 +373,12 @@ bool PPU::write(uint16_t addr, uint8_t data){
     switch (addr) {
         case(0xFF40): // LCDC
             self.LCDC = data;
+            if ( !(self.LCDC & 0x80) )
+            {
+                self.LY = 0;
+                wline = 0;
+                setHBLANK();
+            }
             return true;
         case(0xFF42): // SCY
             self.SCY = data;
