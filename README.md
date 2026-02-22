@@ -4,11 +4,13 @@ Small DMG/GBC emulator written in C++ with SDL2
 
 ### Completed:
 - All games supported  
-- MCB5 supported  
+- MBC5 supported  
 - Scanline-based PPU  
 - Timer & interrupts  
 - Save files  
-- HDMA  
+- HDMA
+- Audio process unit
+- Drag & Drop  
 ### WIP:  
 - MCB3/1 support - Basic banking, need accuracy fixes  
 - RTC clock - a time latch needs to be made  
