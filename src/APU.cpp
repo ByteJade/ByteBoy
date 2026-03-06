@@ -162,7 +162,6 @@ NR42(master.readIO(0xFF21)), NR43(master.readIO(0xFF22)),
 NR44(master.readIO(0xFF23)), NR50(master.readIO(0xFF24)),
 NR51(master.readIO(0xFF25)), wave_ram(&master.readIO(0xFF30))
 {
-    SDL_Init(SDL_INIT_AUDIO);
     spec.freq = SAMPLE_RATE;
     spec.format = AUDIO_S16SYS;
     spec.channels = 2;

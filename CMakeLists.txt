@@ -36,7 +36,7 @@ target_include_directories(${PROJECT_NAME} PRIVATE
 )
 
 target_link_libraries(${PROJECT_NAME} PRIVATE
-    -lGLEW -lGL -lSDL2
+    -lGLEW -lSDL2
 )
 
 target_compile_options(${PROJECT_NAME} PRIVATE

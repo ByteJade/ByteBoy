@@ -1,4 +1,5 @@
 #include <algorithm>
+#include <cstdint>
 
 #include "../include/PPU.hpp"
 #include "../include/MEM.hpp"
@@ -8,13 +9,14 @@ PPU::PPU(MemoryMaster& master, Window& window) : MEM(master),
 screen(window)
 { }
 
-void PPU::updateColor(Color& color, uint16_t data){
+void PPU::updateColor(uint32_t& color, uint16_t data){
     uint8_t r = (data & 0x1F);
     uint8_t g = (data >> 5) & 0x1F;
     uint8_t b = (data >> 10) & 0x1F;
-    color.r = (r << 3) | (r >> 2);
-    color.g = (g << 3) | (g >> 2);
-    color.b = (b << 3) | (b >> 2);
+    r = (r << 3) | (r >> 2);
+    g = (g << 3) | (g >> 2);
+    b = (b << 3) | (b >> 2);
+    color = (r<< 24) | (g << 16) | (b << 8) | 0xFF;
 }
 void PPU::update(){
     IS->STAT = (IS->STAT&0b11111100)|MODE;
@@ -104,7 +106,7 @@ void PPU::drawing(){
                 continue;
             }
             uint8_t Opp = Opd+((Opx>>2)&0x7)*4;
-            Color col;
+            uint32_t col;
             if(isMaster){
                 if (Bpd == 0){
                     col = self.OBcolorBuffer[Opp];

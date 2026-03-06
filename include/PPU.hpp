@@ -13,8 +13,8 @@ struct PPUState{
     uint8_t WY{0};
     uint8_t WX{0};
     uint8_t OPRI{0};
-    Color BGcolorBuffer[32];
-    Color OBcolorBuffer[32];
+    uint32_t BGcolorBuffer[32];
+    uint32_t OBcolorBuffer[32];
 };
 
 class MemoryMaster;
@@ -40,7 +40,7 @@ class PPU{
     uint8_t BGsrc;
     uint8_t OBsrc;
 
-    void updateColor(Color& color, uint16_t data);
+    void updateColor(uint32_t& color, uint16_t data);
 
     void update();
     void setHBLANK();

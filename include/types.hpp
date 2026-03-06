@@ -15,10 +15,6 @@ struct Vertex {
     float position[2];
     float texture[2];
 };
-
-struct Color{
-    uint8_t r, g, b;
-};
 struct InterruptState{
     uint8_t IE{0};
     uint8_t IF{0};
