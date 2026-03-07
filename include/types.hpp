@@ -1,8 +1,8 @@
 #pragma once
 #include <cstdint>
 
-constexpr unsigned int SCW = 160;
-constexpr unsigned int SCH = 144;
+#define SCW 160
+#define SCH 144
 
 enum INTERRUPTS {
     VBLANK = 0x1,
@@ -11,10 +11,7 @@ enum INTERRUPTS {
     SERIAL = 0x8,
     INPUT = 0x10
 };
-struct Vertex {
-    float position[2];
-    float texture[2];
-};
+
 struct InterruptState{
     uint8_t IE{0};
     uint8_t IF{0};
