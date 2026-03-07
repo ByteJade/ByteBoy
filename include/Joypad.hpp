@@ -2,11 +2,11 @@
 #include "types.hpp"
 
 class Joypad{
-    uint8_t Joypad{0xFF};
     InterruptState* IS;
+    uint8_t Joypad{0xFF};
 public:
-    uint8_t directions{0xFF};
-    uint8_t buttons{0xFF};
+    uint8_t directions{0xF};
+    uint8_t buttons{0xF};
     
     void update();
 
