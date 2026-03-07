@@ -5,7 +5,7 @@ void Joypad::update(){
     if (!(Joypad & 0x20)) {
         result |= buttons;
     }
-    else if (!(Joypad & 0x10)) {
+    if (!(Joypad & 0x10)) {
         result |= directions;
     }
     
@@ -16,6 +16,7 @@ void Joypad::update(){
 bool Joypad::write(uint16_t addr, uint8_t data){
     if (addr == 0xFF00){
         Joypad = 0xC0 | (data&0xF0) | (Joypad&0xF);
+        update();
         return true;
     }
     return false;
