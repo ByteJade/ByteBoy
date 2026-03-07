@@ -1,12 +1,12 @@
 #include "../include/Joypad.hpp"
 
 void Joypad::update(){
-    uint8_t result = 0xC0 | (Joypad & 0xF0);
+    uint8_t result = Joypad & 0xF0;
     if (!(Joypad & 0x20)) {
-        result |= (buttons & 0xF);
+        result |= buttons;
     }
     else if (!(Joypad & 0x10)) {
-        result |= (directions & 0xF);
+        result |= directions;
     }
     
     Joypad = result;
@@ -15,7 +15,7 @@ void Joypad::update(){
 
 bool Joypad::write(uint16_t addr, uint8_t data){
     if (addr == 0xFF00){
-        Joypad = (data&0xF0) | (Joypad&0xF);
+        Joypad = 0xC0 | (data&0xF0) | (Joypad&0xF);
         return true;
     }
     return false;
