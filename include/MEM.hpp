@@ -4,10 +4,10 @@
 #include "Joypad.hpp"
 #include "types.hpp"
 
-#define ROM_BANKSIZE 0x4000; /* 16K */
-#define WRAM_BANKSIZE 0x1000; /* 4K */
-#define VRAM_BANKSIZE 0x2000; /* 8K */
-#define CRAM_BANKSIZE 0x2000; /* 8K */
+#define ROM_BANKSIZE 0x4000 /* 16K */
+#define WRAM_BANKSIZE 0x1000 /* 4K */
+#define VRAM_BANKSIZE 0x2000 /* 8K */
+#define CRAM_BANKSIZE 0x2000 /* 8K */
 
 enum MBC{
     MBC1 = 1,
