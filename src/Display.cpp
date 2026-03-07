@@ -3,8 +3,8 @@
 #include <SDL2/SDL.h>
 
 Window::Window(unsigned int width, unsigned int height, const char* name)
-: _width(width), _height(height)
 {
+    dst = {0, 0, width, height};
     SDL_Init(SDL_INIT_VIDEO | SDL_INIT_EVENTS  | SDL_INIT_AUDIO);
     
     window = SDL_CreateWindow(name, SDL_WINDOWPOS_CENTERED,
@@ -31,6 +31,22 @@ Window::~Window() {
     SDL_Quit();
 }
 
+void Window::resize(int newW, int newH){
+    float game_aspect = (float)SCW / SCH;
+    float window_aspect = (float)newW / newH;
+    
+    if (window_aspect > game_aspect) {
+        dst.h = newH;
+        dst.w = (int)(newH * game_aspect);
+        dst.y = 0;
+        dst.x = (newW - dst.w) / 2;
+    } else {
+        dst.w = newW;
+        dst.h = (int)(newW / game_aspect);
+        dst.x = 0;
+        dst.y = (newH - dst.h) / 2;
+    }
+}
 void Window::poolEvents() {
     SDL_Event event;
     while (SDL_PollEvent(&event)) {
@@ -40,8 +56,7 @@ void Window::poolEvents() {
                 break;
             case SDL_WINDOWEVENT:
                 if (event.window.event == SDL_WINDOWEVENT_RESIZED) {
-                    _width = event.window.data1;
-                    _height = event.window.data2;
+                    resize(event.window.data1, event.window.data2);
                 }
                 break;
             case SDL_KEYDOWN:
@@ -107,8 +122,7 @@ bool Window::poolFile(MemoryMaster& master) {
                 break;
             case SDL_WINDOWEVENT:
                 if (event.window.event == SDL_WINDOWEVENT_RESIZED) {
-                    _width = event.window.data1;
-                    _height = event.window.data2;
+                    resize(event.window.data1, event.window.data2);
                 }
                 break;
             case SDL_DROPFILE: {
@@ -127,10 +141,9 @@ static constexpr int FRAME_DELAY = 1000 / 60;
 void Window::show(){
     SDL_UpdateTexture(texture, NULL, display, SCW * sizeof(uint32_t));
 
-    SDL_SetRenderDrawColor(renderer, 0, 0, 0, 255);  // R, G, B, Alpha
+    SDL_SetRenderDrawColor(renderer, 0, 0, 0, 255);
     SDL_RenderClear(renderer);
 
-    SDL_Rect dst = {0, 0, _width, _height};
     SDL_RenderCopy(renderer, texture, NULL, &dst);
 
     SDL_RenderPresent(renderer);
