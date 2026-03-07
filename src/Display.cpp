@@ -4,7 +4,7 @@
 
 Window::Window(unsigned int width, unsigned int height, const char* name)
 {
-    dst = {0, 0, width, height};
+    dst = {0, 0, int(width), int(height)};
     SDL_Init(SDL_INIT_VIDEO | SDL_INIT_EVENTS  | SDL_INIT_AUDIO);
     
     window = SDL_CreateWindow(name, SDL_WINDOWPOS_CENTERED,
