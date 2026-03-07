@@ -13,6 +13,7 @@ class CPU{
 
     bool halt{false};
     bool ime{false};
+    bool doubleSpeed{false};
     uint8_t extraTime{0};
     
     uint8_t A{0x11};
