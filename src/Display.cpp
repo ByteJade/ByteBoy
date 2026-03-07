@@ -65,7 +65,7 @@ void Window::poolEvents() {
                     case(SDLK_c):
                         joypad.buttons &= ~0xF; break;
                     default:
-                        return;
+                        break;
                 }
                 joypad.update();
                 break;
@@ -90,7 +90,7 @@ void Window::poolEvents() {
                     case(SDLK_c):
                         joypad.buttons |= 0xF; break;
                     default:
-                        return;
+                        break;
                 }
                 joypad.update();
                 break;
