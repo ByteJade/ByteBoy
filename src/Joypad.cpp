@@ -16,7 +16,6 @@ void Joypad::update(){
 bool Joypad::write(uint16_t addr, uint8_t data){
     if (addr == 0xFF00){
         Joypad = (data&0xF0) | (Joypad&0xF);
-        update();
         return true;
     }
     return false;
