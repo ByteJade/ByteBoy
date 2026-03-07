@@ -9,6 +9,7 @@ class Window{
     SDL_Renderer* renderer;
     SDL_Texture* texture;
     uint32_t* display;
+    SDL_Rect dst;
 
     bool shouldClose;
 
