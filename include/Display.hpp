@@ -10,10 +10,9 @@ class Window{
     SDL_Texture* texture;
     uint32_t* display;
 
-    int _width;
-    int _height;
-
     bool shouldClose;
+
+    void resize(int newW, int newH);
 public:
     Joypad joypad;
     
