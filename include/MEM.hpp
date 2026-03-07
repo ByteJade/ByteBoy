@@ -4,10 +4,10 @@
 #include "Joypad.hpp"
 #include "types.hpp"
 
-static const unsigned ROM_BANKSIZE      = 0x4000; /* 16K */
-static const unsigned WRAM_BANKSIZE     = 0x1000; /* 4K */
-static const unsigned VRAM_BANKSIZE     = 0x2000; /* 8K */
-static const unsigned CRAM_BANKSIZE   = 0x2000; /* 8K */
+#define ROM_BANKSIZE 0x4000; /* 16K */
+#define WRAM_BANKSIZE 0x1000; /* 4K */
+#define VRAM_BANKSIZE 0x2000; /* 8K */
+#define CRAM_BANKSIZE 0x2000; /* 8K */
 
 enum MBC{
     MBC1 = 1,
@@ -63,7 +63,6 @@ class MemoryMaster{
     bool bankingMode = 0;
     MBC MBCtype;
 
-    void handleBanking(uint16_t addr, uint8_t data);
     void handleMBC1(uint16_t addr, uint8_t data);
     void handleMBC2(uint16_t addr, uint8_t data);
     void handleMBC3(uint16_t addr, uint8_t data);
@@ -77,7 +76,6 @@ class MemoryMaster{
     HDMAstate hdma;
 public:
     bool isCGB = false;
-    bool doubleCPUspeed = false;
 
     MemoryMaster();
     ~MemoryMaster();
