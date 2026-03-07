@@ -75,18 +75,18 @@ void CPU::SBC8(uint8_t b) {
 }
 void CPU::AND8(uint8_t b) {
     A &= b;
-    F = hcar;
-    if (A == 0) F |= zero;
+    if (A) F = hcar;
+    else F = zero;
 }
 void CPU::OR8(uint8_t b) {
     A |= b;
-    F = 0;
-    if (A == 0) F |= zero;
+    if (A) F = 0;
+    else F = zero;
 }
 void CPU::XOR8(uint8_t b) {
     A ^= b;
-    F = 0;
-    if (A == 0) F |= zero;
+    if (A) F = 0;
+    else F = zero;
 }
 void CPU::CP8(uint8_t b) {
     uint8_t result = A - b;
@@ -105,8 +105,7 @@ uint8_t CPU::INC8(uint8_t b) {
 }
 uint8_t CPU::DEC8(uint8_t b) {
     uint8_t result = b - 1;
-    F &= car;
-    F |= sub;
+    F = (F & car) | sub;
     if (result == 0) F |= zero;
     if ((b & 0xF) == 0) F |= hcar;
     return result;
@@ -231,7 +230,7 @@ uint8_t CPU::SRL(uint8_t reg) {
     return out;
 }
 uint8_t CPU::SLA(uint8_t reg) {
-    uint8_t bit7 = (reg >> 7) & 1;
+    uint8_t bit7 = reg >> 7;
     uint8_t out = reg << 1;
     
     F = 0;
@@ -262,7 +261,7 @@ uint8_t CPU::RR(uint8_t reg) {
 
 uint8_t CPU::RL(uint8_t reg) {
     uint8_t old_carry = (F >> 4) & 1;
-    uint8_t bit7 = (reg >> 7) & 1;
+    uint8_t bit7 = reg >> 7;
     uint8_t out = (reg << 1) | old_carry;
     F = 0;
     if (out == 0) F |= zero;
@@ -270,34 +269,37 @@ uint8_t CPU::RL(uint8_t reg) {
     return out;
 }
 uint8_t CPU::RLC(uint8_t reg) {
-    uint8_t bit7 = (reg >> 7) & 1;
+    uint8_t bit7 = reg >> 7;
     uint8_t out = (reg << 1) | bit7;
-    F = 0;
-    if (out == 0) F |= zero;
+    
+    if (out) F = 0;
+    else F = zero;
     if (bit7) F |= car;
     return out;
 }
 uint8_t CPU::RRC(uint8_t reg) {
     uint8_t bit0 = reg & 1;
     uint8_t out = (reg >> 1) | (bit0 << 7);
-    F = 0;
-    if (out == 0) F |= zero;
+    
+    if (out) F = 0;
+    else F = zero;
     if (bit0) F |= car;
     return out;
 }
 uint8_t CPU::SWAP(uint8_t reg) {
     uint8_t out = (reg << 4) | (reg >> 4);
-    F = 0;
-    if (out == 0) F |= zero;
+    
+    if (out) F = 0;
+    else F = zero;
     return out;
 }
 
 void CPU::STOP(){
     if (MEM.isCGB && (MEM.readIO(0xFF4D) & 1)){
-        MEM.doubleCPUspeed = !MEM.doubleCPUspeed;
-        MEM.writeIO(0xFF4D, 0x80 | MEM.doubleCPUspeed);
+        doubleSpeed = !doubleSpeed;
+        MEM.writeIO(0xFF4D, 0x80 | doubleSpeed);
     }
-    else if (ime) halt = true;
+    if (ime) halt = true;
 }
 CPU::CPU(MemoryMaster& master) : MEM(master){}
 void CPU::init(){
@@ -658,10 +660,10 @@ int CPU::checkInterrupt(){
         interrupt(0x50, 0x04);
         return 20;
     }
-    /*if (pending & SERIAL) {
+    if (pending & SERIAL) {
         interrupt(0x58, 0x08);
         return 20;
-    }*/
+    }
     if (pending & INPUT) {
         interrupt(0x60, 0x10);
         return 20;
@@ -671,10 +673,9 @@ int CPU::checkInterrupt(){
 int CPU::step(){
     int time = checkInterrupt();
     if(!halt) {
-        uint8_t code = n();
-        time += execute(code);
+        time += execute(n());
         // timers works on standart speed
-        if (MEM.doubleCPUspeed) execute(n());
+        if (doubleSpeed) execute(n());
     }else time += 4;
     return time + extraTime;
 }
