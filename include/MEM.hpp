@@ -29,12 +29,14 @@ struct HDMAstate{
     bool work{false};
 };
 
+class APU;
 class PPU;
 class Joypad;
 class Timer;
 class MemoryMaster{
     InterruptState* IS;
     Timer* timer;
+    APU* apu;
     PPU* ppu;
     Joypad* joypad;
 
@@ -85,7 +87,7 @@ public:
     uint8_t readVRAM1(uint16_t addr);
     uint8_t readVRAM(uint16_t addr);
     uint8_t readOAM(uint16_t addr);
-    uint8_t& readIO(uint16_t addr);
+    uint8_t readIO(uint16_t addr);
 
     void write(uint16_t addr, uint8_t data);
     void writeWRAM(uint16_t addr, uint8_t data);
@@ -98,5 +100,6 @@ public:
     void setTimer(Timer* master);
     void setJoypad(Joypad* master);
     void setPPU(PPU* master);
+    void setAPU(APU* master);
     void setInterrupt(InterruptState* master);
 };

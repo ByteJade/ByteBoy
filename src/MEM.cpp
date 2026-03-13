@@ -3,6 +3,7 @@
 #include <iostream>
 
 #include "../include/MEM.hpp"
+#include "../include/APU.hpp"
 #include "../include/PPU.hpp"
 #include "../include/Timer.hpp"
 #include "../include/Display.hpp"
@@ -168,11 +169,12 @@ uint8_t MemoryMaster::readVRAM(uint16_t addr){
 uint8_t MemoryMaster::readOAM(uint16_t addr){
     return OAM[addr-0xFE00];
 }
-uint8_t& MemoryMaster::readIO(uint16_t addr){
-    static uint8_t data = 0xFF;
+uint8_t MemoryMaster::readIO(uint16_t addr){
+    uint8_t data = 0xFF;
     if (ppu->read(addr, data)) return data;
     if (timer->read(addr, data)) return data;
     if (joypad->read(addr, data)) return data;
+    if (apu->read(addr, data)) return data;
     switch (addr) {
         case(0xFF0F): // IF
             return IS->IF;
@@ -258,6 +260,7 @@ void MemoryMaster::writeIO(uint16_t addr, uint8_t data){
     if (ppu->write(addr, data)) return;
     if (timer->write(addr, data)) return;
     if (joypad->write(addr, data)) return;
+    if (apu->write(addr, data)) return;
     switch (addr) {
         case(0xFF0F): // IF
             IS->IF = data;
@@ -442,6 +445,9 @@ void MemoryMaster::setJoypad(Joypad* master){
 }
 void MemoryMaster::setPPU(PPU* master){
     ppu = master;
+}
+void MemoryMaster::setAPU(APU* master){
+    apu = master;
 }
 void MemoryMaster::setInterrupt(InterruptState* master){
     IS = master;

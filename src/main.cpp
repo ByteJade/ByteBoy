@@ -17,11 +17,12 @@ public:
     Timer timer;
 
     GameBoy() : context(640,576,"gbc.emu"), GB(MEM),
-    GC(MEM, context), AP(MEM)
+    GC(MEM, context)
     {
         MEM.setTimer(&timer);
         MEM.setJoypad(&context.joypad);
         MEM.setPPU(&GC);
+        MEM.setAPU(&AP);
 
         MEM.setInterrupt(&bus);
         GB.setInterrupt(&bus);
@@ -38,7 +39,6 @@ public:
             time = GB.step();
             GC.step(time);
             timer.step(time);
-            AP.step();
         }
     }
     void waitUntilDropFile(){
