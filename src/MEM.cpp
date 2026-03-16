@@ -34,15 +34,14 @@ MemoryMaster::~MemoryMaster(){
 // idk how, but this is work
 void MemoryMaster::handleMBC1(uint16_t addr, uint8_t data){
     if (addr < 0x2000){
-        if (CRAMsize == 0) return;
-        CRAMenable = (data&0x0F) == 0x0A;
+        CRAMenable = (data&0xF) == 0xA;
     }else if (addr < 0x4000){
         uint8_t bank = data & 0x1F;
-        if (bank == 0) bank++;
+        bank += bank == 0;
         if (bankingMode) updateROMoffset(bank);
         else updateROMoffset((ROMbank & 0x60) | bank);
     }else if (addr < 0x6000){
-        uint8_t bank = data & 0x03;
+        uint8_t bank = data & 3;
         uint8_t bankHight = bank << 5;
         updateROMoffset((ROMbank & 0x1F) | bankHight);
         if (bankingMode) {
@@ -51,13 +50,8 @@ void MemoryMaster::handleMBC1(uint16_t addr, uint8_t data){
             ROM0offset = ROM0bank * ROM_BANKSIZE;
         }
     }else{
-        bankingMode = data & 0x01;
-        if (bankingMode){
-            uint16_t ROM0bank = (ROMbank & 0x60) & (totalROMbanks - 1);
-            ROM0offset = ROM0bank * ROM_BANKSIZE;
-            updateROMoffset(ROMbank & 0x1F);
-        }
-        else{
+        bankingMode = data & 1;
+        if (!bankingMode){
             ROM0offset = 0;
             RAMoffset = 0;
         }
@@ -67,17 +61,15 @@ void MemoryMaster::handleMBC2(uint16_t addr, uint8_t data){
     if (addr & 0x0100){
         if (addr < 0x4000){
             uint8_t bank = data & 0xF;
-            if (bank == 0) bank++;
+            bank += bank == 0;
             updateROMoffset(bank);
         }
     }else if (addr < 0x2000){
-        if (CRAMsize == 0) return;
-        CRAMenable = (data&0x0F) == 0xA;
+        CRAMenable = (data&0xF) == 0xA;
     }
 }
 void MemoryMaster::handleMBC3(uint16_t addr, uint8_t data){
     if (addr < 0x2000){
-        if (CRAMsize == 0) return;
         CRAMenable = (data&0xF) == 0x0A;
     }else if (addr < 0x4000){
         updateROMoffset(data & 0x7F);
@@ -89,8 +81,7 @@ void MemoryMaster::handleMBC3(uint16_t addr, uint8_t data){
 }
 void MemoryMaster::handleMBC5(uint16_t addr, uint8_t data){
     if (addr < 0x2000){
-        if (CRAMsize == 0) return;
-        CRAMenable = ((data&0x0F) == 0x0A);
+        CRAMenable = ((data&0xF) == 0xA);
     }else if (addr < 0x3000){
         updateROMoffset((ROMbank & 0x100) | data);
     }else if (addr < 0x4000){
@@ -102,13 +93,13 @@ void MemoryMaster::handleMBC5(uint16_t addr, uint8_t data){
     //}
 }
 void MemoryMaster::updateROMoffset(uint16_t data){
+    data &= (totalROMbanks - 1);
     ROMbank = data;
-    ROMbank &= (totalROMbanks - 1);
     ROM1offset = (ROMbank-1) * ROM_BANKSIZE;
 }
 void MemoryMaster::updateRAMoffset(uint16_t data){
+    data &= (totalRAMbanks - 1);
     RAMoffset = data;
-    RAMoffset &= (totalRAMbanks - 1);
     RAMoffset *=  CRAM_BANKSIZE;
 }
 void MemoryMaster::HDMAstep(){
@@ -123,7 +114,6 @@ void MemoryMaster::HDMAstep(){
         hdma.work = false;
     }
 }
-static uint8_t fail = 0xFF;
 uint8_t MemoryMaster::read(uint16_t addr){
     if (addr < 0x4000){
         return ROM[ROM0offset + addr];
@@ -135,7 +125,7 @@ uint8_t MemoryMaster::read(uint16_t addr){
         if (CRAMenable){
             return CRAM[RAMoffset + addr - 0xA000];
         }
-        return fail;
+        return 0xFF;
     }else if (addr < 0xE000){
         return readWRAM(addr);
     }else{
@@ -147,13 +137,13 @@ uint8_t MemoryMaster::read(uint16_t addr){
             return readIO(addr);
         } 
     }
-    return fail;
+    return 0xFF;
 }
 uint8_t MemoryMaster::readWRAM(uint16_t addr){
     if (addr < 0xD000){
         return RAM[addr - 0xC000];
     }else{
-        uint16_t offset = WRAMbank*WRAM_BANKSIZE + addr - 0xD000;
+        uint16_t offset = WRAMoffset + addr - 0xD000;
         return RAM[offset];
     }
 }
@@ -164,7 +154,7 @@ uint8_t MemoryMaster::readVRAM1(uint16_t addr){
     return VRAM[addr - 0x6000];
 }
 uint8_t MemoryMaster::readVRAM(uint16_t addr){
-    return VRAM[VRAMbank*VRAM_BANKSIZE + addr - 0x8000];
+    return VRAM[VRAMoffset + addr - 0x8000];
 }
 uint8_t MemoryMaster::readOAM(uint16_t addr){
     return OAM[addr-0xFE00];
@@ -181,7 +171,7 @@ uint8_t MemoryMaster::readIO(uint16_t addr){
         case(0xFF41): // STAT
             return IS->STAT;
         case(0xFF46): // DMA
-            return fail;
+            return 0xFF;
         case(0xFF51): // HDMA1
             if (isCGB) return hdma.src_hight;
             break;
@@ -243,13 +233,13 @@ void MemoryMaster::write(uint16_t addr, uint8_t data){
     }
 }
 void MemoryMaster::writeVRAM(uint16_t addr, uint8_t data){
-    VRAM[VRAMbank*VRAM_BANKSIZE + addr - 0x8000] = data;
+    VRAM[VRAMoffset + addr - 0x8000] = data;
 }
 void MemoryMaster::writeWRAM(uint16_t addr, uint8_t data){
     if (addr < 0xD000){
         RAM[addr - 0xC000] = data;
     }else{
-        uint16_t offset = WRAMbank*WRAM_BANKSIZE + addr - 0xD000;
+        uint16_t offset = WRAMoffset + addr - 0xD000;
         RAM[offset] = data;
     }
 }
@@ -277,6 +267,7 @@ void MemoryMaster::writeIO(uint16_t addr, uint8_t data){
         case (0xFF4F):
             if (isCGB){
                 VRAMbank = data & 1;
+                VRAMoffset = VRAMbank * VRAM_BANKSIZE;
             } break;
         case(0xFF51): // HDMA1
             if (isCGB) hdma.src_hight = data;
@@ -323,6 +314,7 @@ void MemoryMaster::writeIO(uint16_t addr, uint8_t data){
             if (isCGB){
                 WRAMbank = data & 0x07;
                 if (WRAMbank == 0) WRAMbank = 1;
+                WRAMoffset = WRAMbank * WRAM_BANKSIZE;
             } break;
         case(0xFFFF): // LCDC
             IS->IE = data;
@@ -408,7 +400,7 @@ bool MemoryMaster::readFromFile(const char* filename){
     file.seekg(0x0149, std::ios::beg);
     file.get(byte);
     switch (byte) {
-        case(0x00): CRAMsize = 0; break;
+        case(0x00): CRAMsize = 2 * 1024; break; // 0
         case(0x01): CRAMsize = 2 * 1024; break;
         case(0x02): CRAMsize = 8 * 1024; break;
         case(0x03): CRAMsize = 32 * 1024; break;
