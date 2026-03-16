@@ -55,7 +55,9 @@ class MemoryMaster{
 
     int16_t ROMbank = 1;
     uint8_t WRAMbank = 1;
+    uint32_t WRAMoffset = WRAM_BANKSIZE;
     uint8_t VRAMbank = 0;
+    uint32_t VRAMoffset = 0;
 
     uint32_t CRAMsize = 0;
     bool CRAMenable = false;
