@@ -46,8 +46,8 @@ class MemoryMaster{
     uint8_t* VRAM{nullptr};
     uint8_t* OAM;
     uint8_t* IO;
-    uint16_t totalROMbanks = 1;
-    uint16_t totalRAMbanks = 0;
+    uint16_t totalROMbanks;
+    uint16_t totalRAMbanks;
 
     int32_t ROM0offset = 0;
     int32_t ROM1offset = 0;
@@ -55,7 +55,6 @@ class MemoryMaster{
 
     int16_t ROMbank = 1;
     uint8_t WRAMbank = 1;
-    uint16_t RAMbank = 0;
     uint8_t VRAMbank = 0;
 
     uint32_t CRAMsize = 0;
