@@ -410,83 +410,65 @@ void CPU::executeTableACC(uint8_t code){
     }
 }
 void CPU::executeTableRJAO(uint8_t code){
-    switch (code) {
-        case 0x00: break;
-        case 0x01:
-            SAVESP();
-            extraTime += 16;
-            break;
-        case 0x02: STOP(); break;
-        case 0x03:
+    if (code == 1) {
+        SAVESP();
+        extraTime += 16;
+    } else if (code == 2) {
+        STOP();
+    } else if (code == 3) {
+        PC += int8_t(n());
+        extraTime += 8;
+    } else if (code > 3) {
+        if (readTableCC(code - 4)){
             PC += int8_t(n());
             extraTime += 8;
-            break;
-        case 0x04:
-        case 0x05:
-        case 0x06:
-        case 0x07:
-            if (readTableCC(code - 4)){
-                PC += int8_t(n());
-                extraTime += 8;
-            } else{
-                PC += 1;
-                extraTime += 4;
-            } break;
+        } else{
+            PC += 1;
+            extraTime += 4;
+        }
     }
 }
 void CPU::executeTableCRAO(uint8_t code){
-    switch (code) {
-        case 0x00:
-        case 0x01:
-        case 0x02:
-        case 0x03:
-            if (readTableCC(code)){
-                PC = POP16();
-                extraTime += 16;
-            }else {
-                extraTime += 4;
-            } break;
-        case 0x04:
-            MEM.write(0xFF00 + n(), A);
-            extraTime += 8;
-            break;
-        case 0x05:
-            extraTime += 12;
-            SP = ADD16S(SP, n());
-            break;
-        case 0x06:
-            extraTime += 8;
-            A = MEM.read(0xFF00 + n());
-            break;
-        case 0x07:
-            extraTime += 8;
-            SETHL(ADD16S(SP, n()));
-            break;
+    if (code < 4) {
+        if (readTableCC(code)){
+            PC = POP16();
+            extraTime += 16;
+        }else {
+            extraTime += 4;
+        }
+    } else if (code == 4) {
+        extraTime += 8;
+        MEM.write(0xFF00 + n(), A);
+    } else if (code == 5) {
+        extraTime += 12;
+        SP = ADD16S(SP, n());
+    } else if (code == 6) {
+        extraTime += 8;
+        A = MEM.read(0xFF00 + n());
+    } else {
+        extraTime += 8;
+        SETHL(ADD16S(SP, n()));
     }
 }
 void CPU::executeTableCJAO(uint8_t code){
-    switch (code) {
-        case 0x00:
-        case 0x01:
-        case 0x02:
-        case 0x03:
-            if (readTableCC(code)){
-                PC = nn();
-                extraTime += 8;
-            }else {
-                PC += 2;
-                extraTime += 4;
-            } break;
-        case 0x04: MEM.write(0xFF00+C, A); break;
-        case 0x05:
-            MEM.write(nn(), A);
+    if (code < 4) {
+        if (readTableCC(code)){
+            PC = nn();
             extraTime += 8;
-            break;
-        case 0x06: A = MEM.read(0xFF00+C); break;
-        case 0x07:
-            A = MEM.read(nn());
-            extraTime += 8;
-            break;
+        }else {
+            PC += 2;
+            extraTime += 4;
+        }
+    } else if (code == 4) {
+        MEM.write(0xFF00+C, A);
+    } else if (code == 5) {
+        MEM.write(nn(), A);
+        extraTime += 8;
+    } else if (code == 6) {
+        A = MEM.read(0xFF00+C);
+    } else {
+        A = MEM.read(nn());
+        extraTime += 8;
     }
 }
 uint8_t CPU::executeTableROT(uint8_t code, uint8_t data){
