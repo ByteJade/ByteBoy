@@ -19,22 +19,22 @@ void PPU::updateColor(uint32_t& color, uint16_t data){
     color = (r<< 24) | (g << 16) | (b << 8) | 0xFF;
 }
 void PPU::update(){
-    IS->STAT = (IS->STAT&0b11111100)|MODE;
+    IS.STAT = (IS.STAT&0b11111100)|MODE;
     timeCounter = cost();
 }
 void PPU::setHBLANK(){
-    if (IS->STAT & 0x08) IS->IF |= STAT;
+    if (IS.STAT & 0x08) IS.IF |= STAT;
     MODE = 0;
     update();
 }
 void PPU::setVBLANK(){
-    IS->IF |= VBLANK;
-    if (IS->STAT & 0x10) IS->IF |= STAT;
+    IS.IF |= VBLANK;
+    if (IS.STAT & 0x10) IS.IF |= STAT;
     MODE = 1;
     update();
 }
 void PPU::setSEARCH(){
-    if (IS->STAT & 0x20) IS->IF |= STAT;
+    if (IS.STAT & 0x20) IS.IF |= STAT;
     MODE = 2;
     update();
 }
@@ -327,11 +327,11 @@ int PPU::cost(){
 
 void PPU::checkLYC(){
     if (self.LY == self.LYC){
-        IS->STAT |= 0x04;
-        if (IS->STAT & 0x40)
-            IS->IF |= STAT;
+        IS.STAT |= 0x04;
+        if (IS.STAT & 0x40)
+            IS.IF |= STAT;
     }else {
-        IS->STAT &= ~0x04;
+        IS.STAT &= ~0x04;
     }
 }
 
@@ -490,8 +490,4 @@ bool PPU::read(uint16_t addr, uint8_t& data){
             return true;
     }
     return false;
-}
-
-void PPU::setInterrupt(InterruptState* master){
-    IS = master;
 }

@@ -17,3 +17,5 @@ struct InterruptState{
     uint8_t IF{0};
     uint8_t STAT{0};
 };
+
+inline InterruptState IS;

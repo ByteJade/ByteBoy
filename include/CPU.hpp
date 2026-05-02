@@ -9,7 +9,6 @@ enum Flags {
 class MemoryMaster;
 class CPU{
     MemoryMaster& MEM;
-    InterruptState* IS;
 
     bool halt{false};
     bool ime{false};
@@ -112,6 +111,4 @@ public:
     CPU(MemoryMaster& master);
     void init();
     int step();
-
-    void setInterrupt(InterruptState* master);
 };

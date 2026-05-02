@@ -636,13 +636,13 @@ int CPU::executeCB(uint8_t opcode){
     return 8;
 }
 void CPU::interrupt(uint8_t n, uint8_t flag){
-    IS->IF &= (~flag);
+    IS.IF &= (~flag);
     RST(n);
     ime = false;
 }
 
 int CPU::checkInterrupt(){
-    uint8_t pending = IS->IE & IS->IF;
+    uint8_t pending = IS.IE & IS.IF;
     
     if (pending == 0) return 0;
     if (halt) halt = false;
@@ -678,8 +678,4 @@ int CPU::step(){
         if (doubleSpeed) execute(n());
     }else time += 4;
     return time + extraTime;
-}
-
-void CPU::setInterrupt(InterruptState* master){
-    IS = master;
 }

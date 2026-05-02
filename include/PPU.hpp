@@ -21,7 +21,6 @@ class MemoryMaster;
 class Window;
 class PPU{
     PPUState self;
-    InterruptState* IS;
 
     MemoryMaster& MEM;
     Window& screen;
@@ -64,6 +63,4 @@ public:
 
     bool write(uint16_t addr, uint8_t data);
     bool read(uint16_t addr, uint8_t& data);
-    
-    void setInterrupt(InterruptState* master);
 };

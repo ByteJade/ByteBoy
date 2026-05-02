@@ -14,7 +14,7 @@ void Timer::step(int time){
             self.TIMA++;
             if (self.TIMA == 0) {
                 self.TIMA = self.TMA;
-                IS->IF |= TIMER;
+                IS.IF |= TIMER;
             }
         }
     }
@@ -54,7 +54,4 @@ bool Timer::read(uint16_t addr, uint8_t& data){
             return true;
     }
     return false;
-}
-void Timer::setInterrupt(InterruptState* master){
-    IS = master;
 }

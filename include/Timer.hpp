@@ -12,12 +12,9 @@ struct TimerState{
 class MemoryMaster;
 class Timer{
     TimerState self;
-    InterruptState* IS;
 public:
     void step(int time);
 
     bool write(uint16_t addr, uint8_t data);
     bool read(uint16_t addr, uint8_t& data);
-
-    void setInterrupt(InterruptState* master);
 };

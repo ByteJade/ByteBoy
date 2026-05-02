@@ -167,9 +167,9 @@ uint8_t MemoryMaster::readIO(uint16_t addr){
     if (apu->read(addr, data)) return data;
     switch (addr) {
         case(0xFF0F): // IF
-            return IS->IF;
+            return IS.IF;
         case(0xFF41): // STAT
-            return IS->STAT;
+            return IS.STAT;
         case(0xFF46): // DMA
             return 0xFF;
         case(0xFF51): // HDMA1
@@ -194,7 +194,7 @@ uint8_t MemoryMaster::readIO(uint16_t addr){
             if (isCGB) return WRAMbank;
             break;
         case(0xFFFF): // WX
-            return IS->IE;
+            return IS.IE;
     }
     return IO[addr-0xFF00];
 }
@@ -253,10 +253,10 @@ void MemoryMaster::writeIO(uint16_t addr, uint8_t data){
     if (apu->write(addr, data)) return;
     switch (addr) {
         case(0xFF0F): // IF
-            IS->IF = data;
+            IS.IF = data;
             break;
         case(0xFF41): // STAT
-            IS->STAT = (IS->STAT & 0x87) | (data & 0x78);
+            IS.STAT = (IS.STAT & 0x87) | (data & 0x78);
             break;
         case (0xFF46):{
             uint16_t value = data << 8;
@@ -306,7 +306,7 @@ void MemoryMaster::writeIO(uint16_t addr, uint8_t data){
                 }else{
                     hdma.work = true;
                     hdma.hdma5 = blocks - 1;
-                    if ((IS->STAT & 3) == 0) // H-Blank
+                    if ((IS.STAT & 3) == 0) // H-Blank
                         HDMAstep();
                 }
             } break;
@@ -317,7 +317,7 @@ void MemoryMaster::writeIO(uint16_t addr, uint8_t data){
                 WRAMoffset = WRAMbank * WRAM_BANKSIZE;
             } break;
         case(0xFFFF): // LCDC
-            IS->IE = data;
+            IS.IE = data;
             break;
         default:
             if (addr >= 0xFF00) IO[addr-0xFF00] = data;
@@ -440,7 +440,4 @@ void MemoryMaster::setPPU(PPU* master){
 }
 void MemoryMaster::setAPU(APU* master){
     apu = master;
-}
-void MemoryMaster::setInterrupt(InterruptState* master){
-    IS = master;
 }

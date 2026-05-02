@@ -23,12 +23,6 @@ public:
         MEM.setJoypad(&context.joypad);
         MEM.setPPU(&GC);
         MEM.setAPU(&AP);
-
-        MEM.setInterrupt(&bus);
-        GB.setInterrupt(&bus);
-        GC.setInterrupt(&bus);
-        timer.setInterrupt(&bus);
-        context.joypad.setInterrupt(&bus);
     }
     
     void start(){

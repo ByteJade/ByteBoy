@@ -34,7 +34,6 @@ class PPU;
 class Joypad;
 class Timer;
 class MemoryMaster{
-    InterruptState* IS;
     Timer* timer;
     APU* apu;
     PPU* ppu;
@@ -102,5 +101,4 @@ public:
     void setJoypad(Joypad* master);
     void setPPU(PPU* master);
     void setAPU(APU* master);
-    void setInterrupt(InterruptState* master);
 };

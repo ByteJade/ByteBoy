@@ -10,7 +10,7 @@ void Joypad::update(){
     }
     
     Joypad = result;
-    IS->IF |= INPUT;
+    IS.IF |= INPUT;
 }
 
 bool Joypad::write(uint16_t addr, uint8_t data){
@@ -27,7 +27,4 @@ bool Joypad::read(uint16_t addr, uint8_t& data){
         return true;
     }
     return false;
-}
-void Joypad::setInterrupt(InterruptState* master){
-    IS = master;
 }
