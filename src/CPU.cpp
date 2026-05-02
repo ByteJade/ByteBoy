@@ -75,8 +75,8 @@ void CPU::SBC8(uint8_t b) {
 }
 void CPU::AND8(uint8_t b) {
     A &= b;
-    if (A) F = hcar;
-    else F = zero;
+    F = hcar;
+    if (A == 0) F |= zero;
 }
 void CPU::OR8(uint8_t b) {
     A |= b;
