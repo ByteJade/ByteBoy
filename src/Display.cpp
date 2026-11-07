@@ -2,6 +2,8 @@
 #include "../include/MEM.hpp"
 #include <SDL2/SDL.h>
 
+#define FRAME_DELAY 1000 / 60
+
 Window::Window(unsigned int width, unsigned int height, const char* name)
 {
     dst = {0, 0, int(width), int(height)};
@@ -126,18 +128,14 @@ bool Window::poolFile(MemoryMaster& master) {
                 }
                 break;
             case SDL_DROPFILE: {
-                
-                std::string filepath = event.drop.file;
+                if (master.readFromFile(event.drop.file) return true;
                 SDL_free(event.drop.file);
-                if (master.readFromFile(filepath.c_str())) return true;
-                
                 break;
             }
         }
     }
     return false;
 }
-static constexpr int FRAME_DELAY = 1000 / 60;
 void Window::show(){
     SDL_UpdateTexture(texture, NULL, display, SCW * sizeof(uint32_t));
 
