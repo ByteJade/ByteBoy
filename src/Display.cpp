@@ -128,7 +128,7 @@ bool Window::poolFile(MemoryMaster& master) {
                 }
                 break;
             case SDL_DROPFILE: {
-                if (master.readFromFile(event.drop.file) return true;
+                if (master.readFromFile(event.drop.file)) return true;
                 SDL_free(event.drop.file);
                 break;
             }
