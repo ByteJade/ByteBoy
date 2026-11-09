@@ -21,6 +21,8 @@ instr_timing (blargg): pass
 acid2 tests (mattcurrie): pass  
 MCB5/3/1 tests (mooneye): pass  
 
+![Legend of Zelda in CGB mode](Screenshots/Legend_of_Zelda_DX.png)
+
 ## Controls
 D-Pad - W A S D  
 A - Q  
